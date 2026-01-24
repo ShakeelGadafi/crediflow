@@ -52,7 +52,7 @@ const getBills = async (req, res) => {
 const createBill = async (req, res) => {
   try {
     const { id } = req.params;
-    const { bill_no, bill_date, amount } = req.body;
+    const { bill_no, bill_date, amount } = req.body || {};
     const attachment_url = req.file ? `/uploads/${req.file.filename}` : null;
 
     if (!amount) {

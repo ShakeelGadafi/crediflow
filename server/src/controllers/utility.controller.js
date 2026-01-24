@@ -13,7 +13,7 @@ const getBills = async (req, res) => {
 
 const createBill = async (req, res) => {
   try {
-    const { branch_name, bill_type, bill_no, amount, due_date, notes } = req.body;
+    const { branch_name, bill_type, bill_no, amount, due_date, notes } = req.body || {};
     const attachment_url = req.file ? `/uploads/${req.file.filename}` : null;
 
     if (!branch_name || !bill_type || !amount) {

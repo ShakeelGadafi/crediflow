@@ -61,7 +61,7 @@ const getExpenditures = async (req, res) => {
 
 const createExpenditure = async (req, res) => {
   try {
-    const { section_id, category_id, amount, expense_date, description } = req.body;
+    const { section_id, category_id, amount, expense_date, description } = req.body || {};
     const attachment_url = req.file ? `/uploads/${req.file.filename}` : null;
 
     if (!section_id || !category_id || !amount) {
