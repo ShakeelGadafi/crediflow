@@ -6,6 +6,7 @@ const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes');
 const creditRoutes = require('./routes/credit.routes');
 const utilityRoutes = require('./routes/utility.routes');
+const expenditureRoutes = require('./routes/expenditure.routes');
 
 const app = express();
 
@@ -22,5 +23,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/credit', creditRoutes);
 app.use('/api/utilities', utilityRoutes);
+app.use('/api/expenditure', expenditureRoutes);
 
 module.exports = app;
