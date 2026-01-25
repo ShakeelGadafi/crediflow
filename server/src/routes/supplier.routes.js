@@ -53,6 +53,12 @@ router.patch(
   supplierController.markPaid
 );
 
+router.patch(
+  '/invoices/:id/status', 
+  requirePermission(MODULE_KEY, 'update'), 
+  supplierController.updateStatus
+);
+
 // Optional: View single invoice
 router.get(
     '/invoices/:id', 

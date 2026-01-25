@@ -2,8 +2,8 @@ const supplierService = require('../services/supplier.service');
 
 const getInvoices = async (req, res) => {
   try {
-    const { supplier_name, status, from, to } = req.query;
-    const invoices = await supplierService.getInvoices({ supplier_name, status, from, to });
+    const { supplier_name, status, from, to, search } = req.query;
+    const invoices = await supplierService.getInvoices({ supplier_name, status, from, to, search });
     res.json(invoices);
   } catch (error) {
     console.error(error);
@@ -88,11 +88,30 @@ const getInvoiceById = async (req, res) => {
     }
 };
 
+const updateStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!status) {
+      return res.status(400).json({ message: 'Status is required' });
+    }
+    const updatedInvoice = await supplierService.updateStatus(id, status);
+    if (!updatedInvoice) {
+      return res.status(404).json({ message: 'Invoice not found' });
+    }
+    res.json(updatedInvoice);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message || 'Internal server error' });
+  }
+};
+
 module.exports = {
   getInvoices,
   createInvoice,
   getDueSoon,
   getOverdue,
   markPaid,
+  updateStatus,
   getInvoiceById
 };

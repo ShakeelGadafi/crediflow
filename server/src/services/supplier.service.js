@@ -49,6 +49,11 @@ const getInvoices = async (filters) => {
     params.push(filters.to);
   }
 
+  if (filters.search) {
+    constraints.push(`(invoice_no ILIKE $${params.length + 1} OR grn_no ILIKE $${params.length + 1})`);
+    params.push(`%${filters.search}%`);
+  }
+
   if (constraints.length > 0) {
     query += ' WHERE ' + constraints.join(' AND ');
   }
@@ -92,11 +97,26 @@ const getInvoiceById = async (id) => {
   return result.rows[0];
 };
 
+const updateStatus = async (id, status) => {
+  const validStatuses = ['PAID', 'UNPAID', 'PENDING'];
+  if (!validStatuses.includes(status)) {
+    throw new Error('Invalid status');
+  }
+  
+  const paid_date = status === 'PAID' ? 'CURRENT_DATE' : 'NULL';
+  const result = await db.query(
+    `UPDATE supplier_invoices SET status=$1, paid_date=${paid_date} WHERE id=$2 RETURNING *`,
+    [status, id]
+  );
+  return result.rows[0];
+};
+
 module.exports = {
   createInvoice,
   getInvoices,
   getInvoicesDueSoon,
   getOverdueInvoices,
   markPaid,
+  updateStatus,
   getInvoiceById
 };
