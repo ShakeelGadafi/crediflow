@@ -112,41 +112,15 @@ const getSummary = async (from, to) => {
     params.push(to);
   }
   
-  const whereClause = dateConstraints.length > 0 ? 'HAVING ' + dateConstraints.join(' AND ') : '';
-  // Note: standard SQL might require WHERE for filtering before Group By if columns are available, 
-  // but simpler to put filtering in a CTE or WHERE clause. 
-  // Let's use a WHERE clause for the aggregates.
-  
   const whereSql = dateConstraints.length > 0 ? 'WHERE ' + dateConstraints.join(' AND ') : '';
 
   // 1. Grand Total
-  const grandTotalRes = await db.query(
-    `SELECT COALESCE(SUM(amount), 0) as total FROM expenditures ${whereSql}`,
-    params
-  );
-  const grand_total = grandTotalRes.rows[0].total;
-
-  // 2. By Section
-  const bySection = await db.query(
-    `SELECT s.id, s.name, COALESCE(SUM(e.amount), 0) as total
-     FROM expenditure_sections s
-     LEFT JOIN expenditures e ON s.id = e.section_id
-     ${dateConstraints.length > 0 ? 'AND ' + dateConstraints.join(' AND ').replace(/\$/g, '$' + (params.length + 1 - params.length)) : '' /* Wait, parameterized index matching is tricky here. Let's rewrite cleaner query */} 
-     GROUP BY s.id, s.name
-     ORDER BY total DESC`,
-     // Using same params logic is duplicated. Let's simplify and just query expenditures joined with sections
-     // Correct way:
-  );
-  
-  // Re-write queries to be safe and clean
-  
-  // Grand Total
   const q1 = `SELECT COALESCE(SUM(amount), 0) as total FROM expenditures ${whereSql}`;
   const r1 = await db.query(q1, params);
   
-  // By Section
+  // 2. By Section
   const q2 = `
-    SELECT s.name as section_name, COALESCE(SUM(e.amount), 0) as total
+    SELECT s.id as section_id, s.name as section_name, COALESCE(SUM(e.amount), 0) as total
     FROM expenditures e
     JOIN expenditure_sections s ON e.section_id = s.id
     ${whereSql}
@@ -155,7 +129,7 @@ const getSummary = async (from, to) => {
   `;
   const r2 = await db.query(q2, params);
 
-  // By Category
+  // 3. By Category
   const q3 = `
     SELECT s.name as section_name, c.name as category_name, COALESCE(SUM(e.amount), 0) as total
     FROM expenditures e
@@ -167,19 +141,48 @@ const getSummary = async (from, to) => {
   `;
   const r3 = await db.query(q3, params);
 
+  // 4. By Month
+  const q4 = `
+    SELECT TO_CHAR(expense_date, 'YYYY-MM') as month, COALESCE(SUM(amount), 0) as total
+    FROM expenditures
+    ${whereSql}
+    GROUP BY TO_CHAR(expense_date, 'YYYY-MM')
+    ORDER BY month DESC
+  `;
+  const r4 = await db.query(q4, params);
+
   return {
     grand_total: r1.rows[0].total,
     totals_by_section: r2.rows,
-    totals_by_category: r3.rows
+    totals_by_category: r3.rows,
+    totals_by_month: r4.rows
   };
+};
+
+const deleteSection = async (id) => {
+  const result = await db.query('DELETE FROM expenditure_sections WHERE id = $1 RETURNING *', [id]);
+  return result.rows[0];
+};
+
+const deleteCategory = async (id) => {
+  const result = await db.query('DELETE FROM expenditure_categories WHERE id = $1 RETURNING *', [id]);
+  return result.rows[0];
+};
+
+const deleteExpenditure = async (id) => {
+  const result = await db.query('DELETE FROM expenditures WHERE id = $1 RETURNING *', [id]);
+  return result.rows[0];
 };
 
 module.exports = {
   getSections,
   createSection,
+  deleteSection,
   getCategories,
   createCategory,
+  deleteCategory,
   createExpenditure,
   getExpenditures,
+  deleteExpenditure,
   getSummary
 };

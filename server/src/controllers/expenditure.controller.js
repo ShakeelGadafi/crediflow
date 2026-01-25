@@ -97,12 +97,53 @@ const getSummary = async (req, res) => {
   }
 };
 
+const deleteSection = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await expenditureService.deleteSection(id);
+    if (!deleted) return res.status(404).json({ message: 'Section not found' });
+    res.json({ message: 'Section deleted', ...deleted });
+  } catch (error) {
+    console.error(error);
+    if (error.code === '23503') return res.status(400).json({ message: 'Cannot delete: items exist in this section' });
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+const deleteCategory = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deleted = await expenditureService.deleteCategory(id);
+        if (!deleted) return res.status(404).json({ message: 'Category not found' });
+        res.json({ message: 'Category deleted', ...deleted });
+    } catch (error) {
+        console.error(error);
+        if (error.code === '23503') return res.status(400).json({ message: 'Cannot delete: items exist in this category' });
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+const deleteExpenditure = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await expenditureService.deleteExpenditure(id);
+    if (!deleted) return res.status(404).json({ message: 'Expenditure not found' });
+    res.json({ message: 'Expenditure deleted', ...deleted });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 module.exports = {
   getSections,
   createSection,
+  deleteSection,
   getCategories,
   createCategory,
+  deleteCategory,
   getExpenditures,
   createExpenditure,
+  deleteExpenditure,
   getSummary
 };

@@ -33,6 +33,11 @@ router.post(
     requirePermission(MODULE_KEY, 'create'), 
     expenditureController.createSection
 );
+router.delete(
+    '/sections/:id', 
+    requirePermission(MODULE_KEY, 'delete'), 
+    expenditureController.deleteSection
+);
 
 // Categories
 router.get(
@@ -44,6 +49,11 @@ router.post(
     '/sections/:sectionId/categories', 
     requirePermission(MODULE_KEY, 'create'), 
     expenditureController.createCategory
+);
+router.delete(
+    '/categories/:id', 
+    requirePermission(MODULE_KEY, 'delete'), 
+    expenditureController.deleteCategory
 );
 
 // Expenditures
@@ -64,6 +74,12 @@ router.post(
     requirePermission(MODULE_KEY, 'create'), 
     upload.single('attachment'), 
     expenditureController.createExpenditure
+);
+
+router.delete(
+    '/:id', 
+    requirePermission(MODULE_KEY, 'delete'), 
+    expenditureController.deleteExpenditure
 );
 
 module.exports = router;

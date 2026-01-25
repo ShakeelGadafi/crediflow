@@ -48,3 +48,22 @@ These keys are checked against `user.permissions`. Admins typically have access 
 - `src/components`: Reusable UI components (ProtectedRoute, etc.).
 - `src/layout`: Layout components (Sidebar, Topbar, MainLayout).
 - `src/pages`: Page components organized by feature module.
+
+## Feature Modules
+
+### Expenditure Tracker (DAILY_EXPENDITURE_TRACKER)
+
+The Expenditure module uses a **Month-First** redesign:
+
+*   **Month View** (`/expenditure`): Shows all expenses for a selected month, grouped by **Section**.
+    *   Sections are collapsible (accordion style).
+    *   Shows totals for the month and per section.
+    *   Allows adding new expenditures directly into sections.
+    *   Allows creating new sections.
+*   **Summary** (`/expenditure/summary`): High-level overview.
+    *   Grand total and top sections stats.
+    *   Monthly breakdown (expandable rows) to drill down into historical data.
+    *   Date range filtering.
+*   **All Records** (`/expenditure/all`): Flat list of all historical records.
+    *   Filters for Date Range, Section, and Category.
+    *   Clean table view with attachment links.
