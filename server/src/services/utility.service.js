@@ -15,6 +15,28 @@ const getBills = async (filters) => {
     params.push(filters.status);
   }
 
+  if (filters.startDate) {
+    constraints.push(`due_date >= $${params.length + 1}`);
+    params.push(filters.startDate);
+  }
+
+  if (filters.endDate) {
+    constraints.push(`due_date <= $${params.length + 1}`);
+    params.push(filters.endDate);
+  }
+
+  if (filters.search) {
+    const searchParam = `%${filters.search}%`;
+    constraints.push(`(
+      branch_name ILIKE $${params.length + 1} OR 
+      bill_type ILIKE $${params.length + 2} OR 
+      bill_no ILIKE $${params.length + 3}
+    )`);
+    params.push(searchParam);
+    params.push(searchParam);
+    params.push(searchParam);
+  }
+
   if (constraints.length > 0) {
     query += ' WHERE ' + constraints.join(' AND ');
   }

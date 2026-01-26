@@ -74,10 +74,22 @@ const updateStaffPermissions = async (req, res) => {
     }
 };
 
+const getStaffPermissions = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await adminService.getStaffPermissions(id);
+        res.json(result);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 module.exports = {
   createStaff,
   getAllStaff,
   activateStaff,
   getModules,
-  updateStaffPermissions
+  updateStaffPermissions,
+  getStaffPermissions
 };

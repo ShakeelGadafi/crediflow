@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../../api/apiClient';
 import { Link } from 'react-router-dom';
-import { Plus, Users, DollarSign } from 'lucide-react';
+import { Plus, Users, Search } from 'lucide-react';
 import Button from '../../components/Button';
 import Modal from '../../components/Modal';
 import Input from '../../components/Input';
@@ -12,10 +12,14 @@ export default function CreditList() {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [newCustomer, setNewCustomer] = useState({ full_name: '', phone: '', address: '' });
+    const [search, setSearch] = useState('');
 
     const fetchCustomers = async () => {
+        setLoading(true);
         try {
-            const res = await apiClient.get('/api/credit/customers');
+            const params = {};
+            if (search) params.search = search;
+            const res = await apiClient.get('/api/credit/customers', { params });
             setCustomers(res.data);
         } catch (e) {
              console.error(e);
@@ -25,8 +29,11 @@ export default function CreditList() {
     };
 
     useEffect(() => {
-        fetchCustomers();
-    }, []);
+        const timer = setTimeout(() => {
+            fetchCustomers();
+        }, 300); // Debounce search
+        return () => clearTimeout(timer);
+    }, [search]);
 
     const handleCreate = async (e) => {
         e.preventDefault();
@@ -50,6 +57,15 @@ export default function CreditList() {
                 <Button onClick={() => setShowModal(true)} icon={Plus}>
                     Add Customer
                 </Button>
+            </div>
+
+            <div className="mb-6">
+                <Input 
+                    placeholder="Search customers by name or phone..." 
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    icon={Search}
+                />
             </div>
 
             <Table 

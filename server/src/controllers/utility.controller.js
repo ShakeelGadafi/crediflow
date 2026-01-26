@@ -2,8 +2,8 @@ const utilityService = require('../services/utility.service');
 
 const getBills = async (req, res) => {
   try {
-    const { branch_name, status } = req.query;
-    const bills = await utilityService.getBills({ branch_name, status });
+    const { branch_name, status, search, startDate, endDate } = req.query;
+    const bills = await utilityService.getBills({ branch_name, status, search, startDate, endDate });
     res.json(bills);
   } catch (error) {
     console.error(error);

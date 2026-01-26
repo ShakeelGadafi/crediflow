@@ -10,6 +10,8 @@ export default function CustomerDetails() {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [amount, setAmount] = useState('');
+    const [billNo, setBillNo] = useState('');
+    const [billDate, setBillDate] = useState('');
     const [attachment, setAttachment] = useState(null);
 
     const fetchData = async () => {
@@ -32,6 +34,8 @@ export default function CustomerDetails() {
         e.preventDefault();
         const formData = new FormData();
         formData.append('amount', amount);
+        formData.append('bill_no', billNo);
+        if (billDate) formData.append('bill_date', billDate);
         if (attachment) {
             formData.append('attachment', attachment);
         }
@@ -42,6 +46,8 @@ export default function CustomerDetails() {
             });
             setShowModal(false);
             setAmount('');
+            setBillNo('');
+            setBillDate('');
             setAttachment(null);
             fetchData();
         } catch (e) { alert('Failed to add bill'); }
@@ -98,6 +104,7 @@ export default function CustomerDetails() {
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bill No</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Attachment</th>
@@ -108,6 +115,7 @@ export default function CustomerDetails() {
                         {bills.map(b => (
                             <tr key={b.id}>
                                 <td className="px-6 py-4 text-sm text-gray-900">{new Date(b.created_at).toLocaleDateString()}</td>
+                                <td className="px-6 py-4 text-sm text-gray-500">{b.bill_no || '-'}</td>
                                 <td className="px-6 py-4 text-sm font-medium">${Number(b.amount).toLocaleString()}</td>
                                 <td className="px-6 py-4 text-sm">
                                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${b.status === 'PAID' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
@@ -140,9 +148,22 @@ export default function CustomerDetails() {
                         <h2 className="text-xl font-bold mb-4">Add Bill</h2>
                         <form onSubmit={handleAddBill}>
                             <div className="mb-4">
+                                <label className="block text-sm font-medium mb-1">Bill Number</label>
+                                <input type="text" className="w-full border rounded p-2" 
+                                    value={billNo} onChange={e => setBillNo(e.target.value)}
+                                    placeholder="Optional"
+                                />
+                            </div>
+                            <div className="mb-4">
                                 <label className="block text-sm font-medium mb-1">Amount</label>
                                 <input required type="number" step="0.01" className="w-full border rounded p-2" 
                                     value={amount} onChange={e => setAmount(e.target.value)}
+                                />
+                            </div>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium mb-1">Bill Date</label>
+                                <input type="date" className="w-full border rounded p-2" 
+                                    value={billDate} onChange={e => setBillDate(e.target.value)}
                                 />
                             </div>
                             <div className="mb-4">

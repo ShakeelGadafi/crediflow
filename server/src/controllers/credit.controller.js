@@ -2,7 +2,8 @@ const creditService = require('../services/credit.service');
 
 const getCustomers = async (req, res) => {
   try {
-    const customers = await creditService.getCustomers();
+    const { search } = req.query;
+    const customers = await creditService.getCustomers(search);
     res.json(customers);
   } catch (error) {
     console.error(error);
@@ -52,11 +53,15 @@ const getBills = async (req, res) => {
 const createBill = async (req, res) => {
   try {
     const { id } = req.params;
-    const { bill_no, bill_date, amount } = req.body || {};
+    let { bill_no, bill_date, amount } = req.body || {};
     const attachment_url = req.file ? `/uploads/${req.file.filename}` : null;
 
     if (!amount) {
       return res.status(400).json({ message: 'Amount is required' });
+    }
+
+    if (!bill_date) {
+      bill_date = new Date();
     }
 
     const newBill = await creditService.createBill({

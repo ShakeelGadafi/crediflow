@@ -9,6 +9,7 @@ router.use(requireAuth, requireAdmin);
 router.post('/staff', adminController.createStaff);
 router.get('/staff', adminController.getAllStaff);
 router.patch('/staff/:id', adminController.activateStaff); // Using PATCH for partial update (status)
+router.get('/staff/:id/permissions', adminController.getStaffPermissions);
 router.get('/modules', adminController.getModules);
 router.put('/staff/:id/permissions', adminController.updateStaffPermissions);
 

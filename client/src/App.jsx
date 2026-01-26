@@ -7,6 +7,7 @@ import CreditRoutes from './pages/credit/CreditRoutes';
 import ExpenditureRoutes from './pages/expenditure/ExpenditureRoutes';
 import SupplierRoutes from './pages/suppliers/SupplierRoutes';
 import Utilities from './pages/utilities/Utilities';
+import StaffManagement from './pages/admin/StaffManagement';
 
 function App() {
   return (
@@ -22,6 +23,9 @@ function App() {
           <Route path="/expenditure/*" element={<ExpenditureRoutes />} />
           <Route path="/suppliers/*" element={<SupplierRoutes />} />
           <Route path="/utilities/*" element={<Utilities />} />
+
+          {/* Admin Routes */}
+          <Route path="/admin/staff" element={<StaffManagement />} />
         </Route>
       </Route>
 

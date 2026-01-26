@@ -1,17 +1,28 @@
 const db = require('../config/db');
 
 // 1) Customer list with total outstanding
-const getCustomers = async () => {
-  const query = `
+const getCustomers = async (search) => {
+  let query = `
     SELECT
       c.*,
       COALESCE(SUM(CASE WHEN b.status = 'UNPAID' THEN b.amount ELSE 0 END), 0) AS total_unpaid
     FROM credit_customers c
     LEFT JOIN credit_bills b ON b.customer_id = c.id
+  `;
+
+  const params = [];
+  
+  if (search) {
+    query += ` WHERE c.full_name ILIKE $1 OR c.phone ILIKE $1 `;
+    params.push(`%${search}%`);
+  }
+
+  query += `
     GROUP BY c.id
     ORDER BY c.created_at DESC;
   `;
-  const result = await db.query(query);
+  
+  const result = await db.query(query, params);
   return result.rows;
 };
 

@@ -79,10 +79,22 @@ const updateStaffPermissions = async (userId, permissionsArray) => {
     return results;
 };
 
+const getStaffPermissions = async (userId) => {
+    const query = `
+        SELECT m.id as module_id, m.key, m.name, 
+               ump.can_view, ump.can_create, ump.can_update, ump.can_delete
+        FROM modules m
+        LEFT JOIN user_module_permissions ump ON ump.module_id = m.id AND ump.user_id = $1
+    `;
+    const result = await db.query(query, [userId]);
+    return result.rows;
+};
+
 module.exports = {
   createStaff,
   getAllStaff,
   toggleStaffStatus,
   getModules,
-  updateStaffPermissions
+  updateStaffPermissions,
+  getStaffPermissions
 };

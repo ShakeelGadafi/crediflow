@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/useAuth';
-import { LayoutDashboard, Users, Receipt, CreditCard, Banknote } from 'lucide-react';
+import { LayoutDashboard, Users, Receipt, CreditCard, Banknote, ShieldCheck } from 'lucide-react';
 
 export default function Sidebar() {
   const { user } = useAuth();
@@ -20,6 +20,11 @@ export default function Sidebar() {
     { label: 'Expenditure', path: '/expenditure', icon: CreditCard, permission: 'DAILY_EXPENDITURE_TRACKER' },
     { label: 'Suppliers', path: '/suppliers/invoices', icon: Banknote, permission: 'GRN_CREDIT_REMINDER' },
   ];
+
+  // Admin only menu items
+  if (role === 'ADMIN') {
+    menuItems.push({ label: 'Staff Management', path: '/admin/staff', icon: ShieldCheck });
+  }
 
   return (
     <aside className="w-64 bg-slate-900 text-white h-screen fixed overflow-y-auto z-10 shadow-xl transition-all duration-300">
