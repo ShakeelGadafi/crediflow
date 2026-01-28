@@ -25,10 +25,13 @@ const login = async (email, password) => {
     { expiresIn: process.env.JWT_EXPIRES_IN }
   );
 
+  // Fetch permissions
+  const permissions = await getUserPermissions(user.id);
+
   // Return user info sans password
   const { password_hash, ...userInfo } = user;
 
-  return { token, user: userInfo };
+  return { token, user: { ...userInfo, permissions } };
 };
 
 const getUserById = async (id) => {
@@ -36,7 +39,23 @@ const getUserById = async (id) => {
     'SELECT id, full_name, email, role, is_active, created_at FROM users WHERE id = $1',
     [id]
   );
-  return result.rows[0];
+  const user = result.rows[0];
+  
+  if (user) {
+      user.permissions = await getUserPermissions(user.id);
+  }
+  
+  return user;
+};
+
+const getUserPermissions = async (userId) => {
+    const result = await db.query(`
+        SELECT m.key
+        FROM user_module_permissions ump
+        JOIN modules m ON m.id = ump.module_id
+        WHERE ump.user_id = $1 AND ump.can_view = true
+    `, [userId]);
+    return result.rows.map(row => row.key);
 };
 
 module.exports = {

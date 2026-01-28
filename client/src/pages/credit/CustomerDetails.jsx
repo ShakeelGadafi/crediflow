@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import apiClient from '../../api/apiClient';
-import { Plus, CheckCircle, FileText } from 'lucide-react';
+import { Plus, CheckCircle, FileText, X, RotateCcw } from 'lucide-react';
 
 export default function CustomerDetails() {
     const { id } = useParams();
@@ -13,6 +13,7 @@ export default function CustomerDetails() {
     const [billNo, setBillNo] = useState('');
     const [billDate, setBillDate] = useState('');
     const [attachment, setAttachment] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
 
     const fetchData = async () => {
         try {
@@ -57,6 +58,14 @@ export default function CustomerDetails() {
         if (!confirm("Are you sure you want to mark this bill as PAID?")) return;
         try {
             await apiClient.patch(`/api/credit/bills/${billId}/mark-paid`);
+            fetchData();
+        } catch(e) { alert("Failed to update status"); }
+    };
+
+    const handleMarkUnpaid = async (billId) => {
+        if (!confirm("Are you sure you want to mark this bill as UNPAID?")) return;
+        try {
+            await apiClient.patch(`/api/credit/bills/${billId}/mark-unpaid`);
             fetchData();
         } catch(e) { alert("Failed to update status"); }
     };
@@ -124,15 +133,22 @@ export default function CustomerDetails() {
                                 </td>
                                 <td className="px-6 py-4 text-sm text-gray-500">
                                     {b.attachment_url ? (
-                                        <a href={`${import.meta.env.VITE_API_URL}${b.attachment_url}`} target="_blank" rel="noreferrer" className="text-indigo-600 hover:text-indigo-900 flex items-center">
+                                        <button 
+                                            onClick={() => setPreviewUrl(`${import.meta.env.VITE_API_URL}${b.attachment_url}`)}
+                                            className="text-indigo-600 hover:text-indigo-900 flex items-center"
+                                        >
                                             <FileText className="w-4 h-4 mr-1"/> View
-                                        </a>
+                                        </button>
                                     ) : '-'}
                                 </td>
                                 <td className="px-6 py-4 text-sm">
-                                    {b.status === 'UNPAID' && (
+                                    {b.status === 'UNPAID' ? (
                                         <button onClick={() => handleMarkPaid(b.id)} className="text-green-600 hover:text-green-900 flex items-center">
                                             <CheckCircle className="w-4 h-4 mr-1"/> Mark Paid
+                                        </button>
+                                    ) : (
+                                        <button onClick={() => handleMarkUnpaid(b.id)} className="text-orange-600 hover:text-orange-900 flex items-center">
+                                            <RotateCcw className="w-4 h-4 mr-1"/> Mark Unpaid
                                         </button>
                                     )}
                                 </td>
@@ -177,6 +193,20 @@ export default function CustomerDetails() {
                                 <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Save</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {previewUrl && (
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={() => setPreviewUrl(null)}>
+                    <div className="bg-white rounded-lg p-2 max-w-4xl max-h-full overflow-auto relative" onClick={e => e.stopPropagation()}>
+                        <button 
+                            onClick={() => setPreviewUrl(null)}
+                            className="absolute top-2 right-2 p-1 bg-gray-200 rounded-full hover:bg-gray-300 z-10"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+                        <img src={previewUrl} alt="Attachment" className="max-w-full max-h-[90vh] object-contain" />
                     </div>
                 </div>
             )}

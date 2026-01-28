@@ -92,6 +92,20 @@ const markBillPaid = async (req, res) => {
   }
 };
 
+const markBillUnpaid = async (req, res) => {
+  try {
+    const { billId } = req.params;
+    const updatedBill = await creditService.markBillUnpaid(billId);
+    if (!updatedBill) {
+      return res.status(404).json({ message: 'Bill not found' });
+    }
+    res.json(updatedBill);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 module.exports = {
   getCustomers,
   createCustomer,
@@ -99,4 +113,5 @@ module.exports = {
   getBills,
   createBill,
   markBillPaid,
+  markBillUnpaid,
 };

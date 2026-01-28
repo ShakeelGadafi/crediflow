@@ -85,6 +85,14 @@ const markBillPaid = async (billId) => {
   return result.rows[0];
 };
 
+const markBillUnpaid = async (billId) => {
+  const result = await db.query(
+    "UPDATE credit_bills SET status='UNPAID', paid_date=NULL WHERE id=$1 RETURNING *",
+    [billId]
+  );
+  return result.rows[0];
+};
+
 module.exports = {
   getCustomers,
   createCustomer,
@@ -92,4 +100,5 @@ module.exports = {
   getBillsByCustomerId,
   createBill,
   markBillPaid,
+  markBillUnpaid,
 };

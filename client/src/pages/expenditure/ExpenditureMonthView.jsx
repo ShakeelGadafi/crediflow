@@ -191,20 +191,27 @@ export default function ExpenditureMonthView() {
     // We need: DB Section -> DB Category -> List of Expenditures
     const processedData = useMemo(() => {
         let monthTotal = 0;
+
+        // Helper to check creation date
+        const isCreatedInCurrentMonth = (dateStr) => {
+            if (!dateStr) return false;
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return false;
+            return d.getMonth() === currentMonth.getMonth() && 
+                   d.getFullYear() === currentMonth.getFullYear();
+        };
         
         const tree = dbSections.map(dbSec => {
             const myDbCats = dbCategoriesMap[dbSec.id] || [];
-            
-            let dbSectionTotal = 0;
-            
-            const subTree = myDbCats.map(dbCat => {
+        
+            // 1. Process children first
+            const rawSubTree = myDbCats.map(dbCat => {
                 // Find items for this DB Section + DB Category
                 const items = expenditures.filter(e => 
                     e.section_id === dbSec.id && e.category_id === dbCat.id
                 );
                 
                 const subTotal = items.reduce((sum, i) => sum + Number(i.amount), 0);
-                dbSectionTotal += subTotal;
                 
                 return {
                     ...dbCat,
@@ -212,18 +219,28 @@ export default function ExpenditureMonthView() {
                     total: subTotal
                 };
             });
-            
-            monthTotal += dbSectionTotal;
+
+            // 2. Filter children (Show if has Items OR Created this month)
+            const subTree = rawSubTree.filter(cat => 
+                cat.total > 0 || isCreatedInCurrentMonth(cat.created_at)
+            );
+
+            // 3. Calculate Section Total
+            const dbSectionTotal = subTree.reduce((sum, cat) => sum + cat.total, 0);
             
             return {
                 ...dbSec,
                 subSections: subTree,
                 total: dbSectionTotal
             };
-        });
+        })
+        // 4. Filter Sections (Show if has Children OR Created this month)
+        .filter(sec => sec.subSections.length > 0 || isCreatedInCurrentMonth(sec.created_at));
+        
+        monthTotal = tree.reduce((sum, sec) => sum + sec.total, 0);
         
         return { tree, monthTotal };
-    }, [dbSections, dbCategoriesMap, expenditures]);
+    }, [dbSections, dbCategoriesMap, expenditures, currentMonth]);
 
     const handlePrevMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
     const handleNextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));

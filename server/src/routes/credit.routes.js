@@ -68,4 +68,11 @@ router.patch(
   creditController.markBillPaid
 );
 
+// PATCH /api/credit/bills/:billId/mark-unpaid - Mark Unpaid
+router.patch(
+  '/bills/:billId/mark-unpaid',
+  requirePermission(MODULE_KEY, 'update'),
+  creditController.markBillUnpaid
+);
+
 module.exports = router;
