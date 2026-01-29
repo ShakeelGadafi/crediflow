@@ -19,33 +19,34 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
     sm: 'max-w-md',
     md: 'max-w-lg',
     lg: 'max-w-2xl',
-    xl: 'max-w-4xl'
+    xl: 'max-w-4xl',
+    full: 'max-w-6xl'
   };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex min-h-screen items-center justify-center px-4 pt-4 pb-20 text-center sm:p-0">
-        {/* Background overlay with animation */}
+      <div className="flex min-h-screen items-center justify-center p-4">
+        {/* Background overlay */}
         <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity animate-fadeIn"
           onClick={onClose}
         ></div>
 
         {/* Modal panel */}
-        <div className={`relative inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle ${sizes[size]} w-full animate-slideUp`}>
+        <div className={`relative bg-white rounded-2xl shadow-2xl transform transition-all ${sizes[size]} w-full animate-scaleIn`}>
           {/* Header */}
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-white">{title}</h3>
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
             <button
               onClick={onClose}
-              className="text-white/80 hover:text-white hover:bg-white/10 rounded-full p-1 transition-all"
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Content */}
-          <div className="px-6 py-4">
+          <div className="px-6 py-5">
             {children}
           </div>
         </div>

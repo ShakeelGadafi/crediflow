@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import apiClient from '../../api/apiClient';
-import { Plus, ChevronDown, ChevronRight, Calendar, ArrowLeft, ArrowRight, FileText, Trash2, Eye, X } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Calendar, ArrowLeft, ArrowRight, FileText, Trash2, Eye, X, BarChart2, List } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import Button from '../../components/Button';
 
 export default function ExpenditureMonthView() {
     const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -246,46 +247,44 @@ export default function ExpenditureMonthView() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                 <div className="flex items-center space-x-4">
-                    <button onClick={handlePrevMonth} className="p-2 hover:bg-gray-100 rounded-full text-gray-600">
+            <div className="flex flex-col md:flex-row justify-between items-center bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                 <div className="flex items-center gap-4">
+                    <button onClick={handlePrevMonth} className="p-2.5 hover:bg-gray-100 rounded-xl text-gray-500 transition-colors">
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div className="flex flex-col items-center">
-                        <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                        <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                              <Calendar className="w-6 h-6 text-indigo-600"/>
                              {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                         </h2>
-                        <span className="text-green-600 font-bold text-lg">
-                            Total: ${processedData.monthTotal.toLocaleString()}
+                        <span className="text-emerald-600 font-bold text-lg mt-1">
+                            Total: LKR {processedData.monthTotal.toLocaleString()}
                         </span>
                     </div>
-                    <button onClick={handleNextMonth} className="p-2 hover:bg-gray-100 rounded-full text-gray-600">
+                    <button onClick={handleNextMonth} className="p-2.5 hover:bg-gray-100 rounded-xl text-gray-500 transition-colors">
                         <ArrowRight className="w-5 h-5" />
                     </button>
                 </div>
 
-                <div className="flex gap-3">
-                     <Link to="all" className="px-4 py-2 border border-gray-300 rounded-lg flex items-center hover:bg-gray-50 text-gray-700 font-medium">
-                        <FileText className="w-4 h-4 mr-2"/> All Records
+                <div className="flex gap-3 mt-4 md:mt-0">
+                    <Link to="all" className="inline-flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-700 font-medium text-sm transition-colors">
+                        <List className="w-4 h-4"/> All Records
                     </Link>
-                    <Link to="summary" className="px-4 py-2 border border-gray-300 rounded-lg flex items-center hover:bg-gray-50 text-gray-700 font-medium">
-                        <FileText className="w-4 h-4 mr-2"/> Summary
+                    <Link to="summary" className="inline-flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-700 font-medium text-sm transition-colors">
+                        <BarChart2 className="w-4 h-4"/> Summary
                     </Link>
                     
                     {/* Add New Dropdown */}
                     <div className="relative group">
-                         <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-indigo-700 font-medium shadow-sm">
-                            <Plus className="w-4 h-4 mr-2" /> Add New
-                        </button>
-                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200 hidden group-hover:block z-10">
-                            <button onClick={() => setShowCreateCategoryModal(true)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">
+                        <Button icon={Plus}>Add New</Button>
+                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 border border-gray-100 hidden group-hover:block z-10 animate-scaleIn origin-top-right">
+                            <button onClick={() => setShowCreateCategoryModal(true)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 w-full text-left transition-colors">
                                 Create Category
                             </button>
-                            <button onClick={() => setShowCreateSectionModal(true)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">
+                            <button onClick={() => setShowCreateSectionModal(true)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 w-full text-left transition-colors">
                                 Create Section
                             </button>
-                            <button onClick={() => openAddItem()} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">
+                            <button onClick={() => openAddItem()} className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 w-full text-left transition-colors">
                                 Add Item
                             </button>
                         </div>
@@ -295,30 +294,38 @@ export default function ExpenditureMonthView() {
 
             {/* Content Tree */}
             <div className="space-y-6">
-                 {loading ? <div className="text-center py-10">Loading...</div> : processedData.tree.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500 bg-white rounded-lg border border-gray-200 border-dashed">
-                        No Categories found. Click "Add New" -> "Create Category" to start.
+                 {loading ? (
+                    <div className="flex items-center justify-center h-64">
+                        <div className="animate-spin rounded-full h-10 w-10 border-[3px] border-gray-200 border-t-indigo-600"></div>
+                    </div>
+                 ) : processedData.tree.length === 0 ? (
+                    <div className="text-center py-16 bg-white rounded-xl border-2 border-gray-100 border-dashed">
+                        <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                        <p className="text-gray-600 font-medium">No Categories found</p>
+                        <p className="text-gray-400 text-sm mt-1">Click "Add New" → "Create Category" to start</p>
                     </div>
                  ) : processedData.tree.map((catNode) => (
                      /* GREEN CONTAINER (Category) */
-                     <div key={catNode.id} className="bg-emerald-50 rounded-2xl overflow-hidden shadow-sm border border-emerald-100">
+                     <div key={catNode.id} className="bg-gradient-to-b from-emerald-50 to-white rounded-2xl overflow-hidden shadow-sm border border-emerald-100">
                         {/* Category Header */}
                         <div 
-                            className="bg-emerald-600 px-6 py-4 flex justify-between items-center text-white cursor-pointer group"
+                            className="bg-gradient-to-r from-emerald-600 to-emerald-500 px-6 py-4 flex justify-between items-center text-white cursor-pointer group"
                             onClick={() => setExpandedDbSections(p => ({...p, [catNode.id]: !p[catNode.id]}))}
                         >
-                            <div className="flex items-center gap-2">
-                                {expandedDbSections[catNode.id] ? <ChevronDown className="w-6 h-6"/> : <ChevronRight className="w-6 h-6"/>}
+                            <div className="flex items-center gap-3">
+                                <div className="p-1.5 bg-white/20 rounded-lg">
+                                    {expandedDbSections[catNode.id] ? <ChevronDown className="w-5 h-5"/> : <ChevronRight className="w-5 h-5"/>}
+                                </div>
                                 <h3 className="text-xl font-bold">{catNode.name}</h3>
                             </div>
                             <div className="flex items-center gap-4">
                                 <span className="text-xl font-bold">
-                                    ${catNode.total.toLocaleString()}
+                                    LKR {catNode.total.toLocaleString()}
                                 </span>
                                 {/* Delete Category Button */}
                                 <button 
                                     onClick={(e) => handleDeleteCategory(catNode.id, catNode.name, e)}
-                                    className="p-1.5 bg-emerald-700 hover:bg-red-600 rounded text-emerald-100 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
+                                    className="p-2 bg-white/10 hover:bg-red-500 rounded-lg text-white transition-colors opacity-0 group-hover:opacity-100"
                                     title="Delete Category"
                                 >
                                     <Trash2 className="w-4 h-4" />
@@ -330,7 +337,7 @@ export default function ExpenditureMonthView() {
                         {expandedDbSections[catNode.id] && (
                             <div className="p-6 space-y-4">
                                 {catNode.subSections.length === 0 ? (
-                                    <div className="text-center text-emerald-600/70 py-4 border-2 border-dashed border-emerald-200 rounded-lg">
+                                    <div className="text-center text-emerald-600/70 py-6 border-2 border-dashed border-emerald-200 rounded-xl">
                                         No sections in this category. 
                                         <button 
                                             onClick={() => {
@@ -346,7 +353,7 @@ export default function ExpenditureMonthView() {
                                     /* RED BAR (Section) */
                                     <div key={secNode.id} className="rounded-xl overflow-hidden border border-rose-100 shadow-sm bg-white">
                                         <div 
-                                            className="bg-rose-400 px-4 py-2 flex justify-between items-center text-white cursor-pointer hover:bg-rose-500 transition-colors group"
+                                            className="bg-gradient-to-r from-rose-400 to-rose-300 px-4 py-3 flex justify-between items-center text-white cursor-pointer hover:from-rose-500 hover:to-rose-400 transition-all group"
                                             onClick={() => setExpandedDbCategories(p => ({...p, [secNode.id]: !p[secNode.id]}))}
                                         >
                                             <div className="flex items-center gap-2">
@@ -443,61 +450,74 @@ export default function ExpenditureMonthView() {
             
             {/* Attachment Viewer Modal */}
             {viewingAttachment && (
-                <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-lg w-full max-w-5xl h-[85vh] flex flex-col relative shadow-2xl">
-                        <button 
-                            onClick={() => setViewingAttachment(null)} 
-                            className="absolute -top-12 right-0 p-2 text-white hover:text-gray-300 transition-colors z-10 flex flex-col items-center"
-                        >
-                            <X className="w-8 h-8"/>
-                            <span className="text-xs">Close</span>
-                        </button>
-                        <div className="flex-1 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center relative">
-                             {viewingAttachment.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i) ? (
-                                 <img src={viewingAttachment} alt="Bill Attachment" className="max-w-full max-h-full object-contain shadow-lg"/>
-                             ) : (
-                                 <iframe src={viewingAttachment} className="w-full h-full border-none" title="Attachment Viewer"/>
-                             )}
-                        </div>
+                <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn">
+                    <button 
+                        onClick={() => setViewingAttachment(null)} 
+                        className="absolute top-6 right-6 p-3 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-xl transition-colors"
+                    >
+                        <X className="w-6 h-6"/>
+                    </button>
+                    <div className="max-w-5xl w-full h-[85vh] animate-scaleIn">
+                        {viewingAttachment.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i) ? (
+                            <img src={viewingAttachment} alt="Bill Attachment" className="max-w-full max-h-full mx-auto object-contain rounded-xl shadow-2xl"/>
+                        ) : (
+                            <iframe src={viewingAttachment} className="w-full h-full border-none rounded-xl bg-white shadow-2xl" title="Attachment Viewer"/>
+                        )}
                     </div>
                 </div>
             )}
 
             {/* 1. Create Category Modal */}
             {showCreateCategoryModal && (
-                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-                    <div className="bg-white p-6 rounded-xl w-full max-w-sm shadow-2xl">
-                        <h3 className="text-xl font-bold mb-4 text-emerald-800">Create New Category</h3>
-                        <form onSubmit={handleCreateCategory} className="space-y-4">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+                    <div className="bg-white rounded-xl w-full max-w-sm shadow-2xl animate-scaleIn overflow-hidden">
+                        <div className="flex justify-between items-center px-6 py-5 border-b border-gray-100">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Category Name</label>
+                                <h3 className="text-lg font-semibold text-gray-900">Create New Category</h3>
+                                <p className="text-sm text-gray-500 mt-0.5">Add a new expense category</p>
+                            </div>
+                            <button onClick={() => setShowCreateCategoryModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <form onSubmit={handleCreateCategory} className="p-6 space-y-5">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Category Name</label>
                                 <input 
-                                    className="w-full mt-1 border border-gray-300 rounded-lg p-2.5 focus:ring-emerald-500 focus:border-emerald-500"
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-shadow"
                                     value={newCategoryName}
                                     onChange={e => setNewCategoryName(e.target.value)}
                                     required
                                     placeholder="e.g. Kandy Branch"
                                 />
                             </div>
-                            <div className="flex justify-end gap-2 pt-2">
-                                <button type="button" onClick={() => setShowCreateCategoryModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
-                                <button type="submit" className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">Create</button>
-                            </div>
                         </form>
+                        <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+                            <Button variant="ghost" onClick={() => setShowCreateCategoryModal(false)}>Cancel</Button>
+                            <button onClick={handleCreateCategory} className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium text-sm transition-colors">Create</button>
+                        </div>
                     </div>
                 </div>
             )}
 
             {/* 2. Create Section Modal */}
             {showCreateSectionModal && (
-                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-                    <div className="bg-white p-6 rounded-xl w-full max-w-sm shadow-2xl">
-                        <h3 className="text-xl font-bold mb-4 text-rose-800">Create New Section</h3>
-                        <form onSubmit={handleCreateSection} className="space-y-4">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+                    <div className="bg-white rounded-xl w-full max-w-sm shadow-2xl animate-scaleIn overflow-hidden">
+                        <div className="flex justify-between items-center px-6 py-5 border-b border-gray-100">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Parent Category</label>
+                                <h3 className="text-lg font-semibold text-gray-900">Create New Section</h3>
+                                <p className="text-sm text-gray-500 mt-0.5">Add a section to a category</p>
+                            </div>
+                            <button onClick={() => setShowCreateSectionModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <form onSubmit={handleCreateSection} className="p-6 space-y-5">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Parent Category</label>
                                 <select 
-                                    className="w-full mt-1 border border-gray-300 rounded-lg p-2.5 focus:ring-rose-500 focus:border-rose-500"
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-shadow"
                                     value={newSectionData.parentId}
                                     onChange={e => setNewSectionData({...newSectionData, parentId: e.target.value})}
                                     required
@@ -507,35 +527,43 @@ export default function ExpenditureMonthView() {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Section Name</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Section Name</label>
                                 <input 
-                                    className="w-full mt-1 border border-gray-300 rounded-lg p-2.5 focus:ring-rose-500 focus:border-rose-500"
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-shadow"
                                     value={newSectionData.name}
                                     onChange={e => setNewSectionData({...newSectionData, name: e.target.value})}
                                     required
                                     placeholder="e.g. Food"
                                 />
                             </div>
-                            <div className="flex justify-end gap-2 pt-2">
-                                <button type="button" onClick={() => setShowCreateSectionModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
-                                <button type="submit" className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700">Create</button>
-                            </div>
                         </form>
+                        <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+                            <Button variant="ghost" onClick={() => setShowCreateSectionModal(false)}>Cancel</Button>
+                            <button onClick={handleCreateSection} className="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 font-medium text-sm transition-colors">Create</button>
+                        </div>
                     </div>
                 </div>
             )}
 
             {/* 3. Add Item Modal */}
             {showAddItemModal && (
-                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-                    <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-2xl">
-                         <h3 className="text-xl font-bold mb-4 text-indigo-800">Add Item</h3>
-                         <form onSubmit={handleCreateItem} className="space-y-4">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+                    <div className="bg-white rounded-xl w-full max-w-md shadow-2xl animate-scaleIn overflow-hidden">
+                        <div className="flex justify-between items-center px-6 py-5 border-b border-gray-100">
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900">Add Item</h3>
+                                <p className="text-sm text-gray-500 mt-0.5">Record a new expense</p>
+                            </div>
+                            <button onClick={() => setShowAddItemModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                         <form onSubmit={handleCreateItem} className="p-6 space-y-5 max-h-[60vh] overflow-y-auto">
                              <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Category</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Category</label>
                                     <select 
-                                        className="w-full mt-1 border border-gray-300 rounded-lg p-2.5"
+                                        className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
                                         value={newItem.parentId}
                                         onChange={e => setNewItem({...newItem, parentId: e.target.value, subId: ''})}
                                         required
@@ -545,9 +573,9 @@ export default function ExpenditureMonthView() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Section</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Section</label>
                                     <select 
-                                        className="w-full mt-1 border border-gray-300 rounded-lg p-2.5"
+                                        className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
                                         value={newItem.subId}
                                         onChange={e => setNewItem({...newItem, subId: e.target.value})}
                                         required
@@ -560,10 +588,10 @@ export default function ExpenditureMonthView() {
                              </div>
                              
                              <div>
-                                <label className="block text-sm font-medium text-gray-700">Date</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Date</label>
                                 <input 
                                     type="date"
-                                    className="w-full mt-1 border border-gray-300 rounded-lg p-2.5"
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
                                     value={newItem.expense_date}
                                     onChange={e => setNewItem({...newItem, expense_date: e.target.value})}
                                     required 
@@ -571,41 +599,45 @@ export default function ExpenditureMonthView() {
                              </div>
 
                              <div>
-                                <label className="block text-sm font-medium text-gray-700">Description</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
                                 <input 
                                     type="text"
-                                    className="w-full mt-1 border border-gray-300 rounded-lg p-2.5"
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
                                     value={newItem.description}
                                     onChange={e => setNewItem({...newItem, description: e.target.value})}
+                                    placeholder="Enter description"
                                 />
                              </div>
 
                              <div>
-                                <label className="block text-sm font-medium text-gray-700">Amount</label>
-                                <input 
-                                    type="number"
-                                    step="0.01"
-                                    className="w-full mt-1 border border-gray-300 rounded-lg p-2.5"
-                                    value={newItem.amount}
-                                    onChange={e => setNewItem({...newItem, amount: e.target.value})}
-                                    required 
-                                />
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Amount</label>
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">LKR</span>
+                                    <input 
+                                        type="number"
+                                        step="0.01"
+                                        className="w-full border border-gray-200 rounded-lg pl-12 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
+                                        value={newItem.amount}
+                                        onChange={e => setNewItem({...newItem, amount: e.target.value})}
+                                        required 
+                                        placeholder="0.00"
+                                    />
+                                </div>
                              </div>
 
                              <div>
-                                <label className="block text-sm font-medium text-gray-700">Attachment</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Attachment</label>
                                 <input 
                                     type="file"
-                                    className="w-full mt-1 border border-gray-300 rounded-lg p-2.5 text-sm"
+                                    className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                     onChange={e => setAttachment(e.target.files[0])}
                                 />
                              </div>
-
-                             <div className="flex justify-end gap-2 pt-2">
-                                <button type="button" onClick={() => setShowAddItemModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
-                                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Add Item</button>
-                            </div>
                          </form>
+                        <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+                            <Button variant="ghost" onClick={() => setShowAddItemModal(false)}>Cancel</Button>
+                            <Button onClick={handleCreateItem}>Add Item</Button>
+                        </div>
                     </div>
                 </div>
             )}

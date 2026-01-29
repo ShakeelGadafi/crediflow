@@ -2,10 +2,10 @@ const exportService = require('../services/export.service');
 
 const exportCreditBills = async (req, res) => {
     try {
-        const csv = await exportService.getCreditBillsCSV();
-        res.header('Content-Type', 'text/csv');
-        res.attachment('credit-bills.csv');
-        res.send(csv);
+        const buffer = await exportService.getCreditBillsExcel();
+        res.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.attachment('credit-bills.xlsx');
+        res.send(buffer);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Internal server error' });
@@ -14,10 +14,10 @@ const exportCreditBills = async (req, res) => {
 
 const exportUtilityBills = async (req, res) => {
     try {
-        const csv = await exportService.getUtilityBillsCSV();
-        res.header('Content-Type', 'text/csv');
-        res.attachment('utility-bills.csv');
-        res.send(csv);
+        const buffer = await exportService.getUtilityBillsExcel();
+        res.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.attachment('utility-bills.xlsx');
+        res.send(buffer);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Internal server error' });
@@ -26,10 +26,10 @@ const exportUtilityBills = async (req, res) => {
 
 const exportExpenditures = async (req, res) => {
     try {
-        const csv = await exportService.getExpendituresCSV();
-        res.header('Content-Type', 'text/csv');
-        res.attachment('expenditures.csv');
-        res.send(csv);
+        const buffer = await exportService.getExpendituresExcel();
+        res.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.attachment('expenditures.xlsx');
+        res.send(buffer);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Internal server error' });
@@ -38,10 +38,10 @@ const exportExpenditures = async (req, res) => {
 
 const exportSupplierInvoices = async (req, res) => {
     try {
-        const csv = await exportService.getSupplierInvoicesCSV();
-        res.header('Content-Type', 'text/csv');
-        res.attachment('supplier-invoices.csv');
-        res.send(csv);
+        const buffer = await exportService.getSupplierInvoicesExcel();
+        res.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.attachment('supplier-invoices.xlsx');
+        res.send(buffer);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Internal server error' });

@@ -64,6 +64,20 @@ const markBillPaid = async (req, res) => {
   }
 };
 
+const markBillUnpaid = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedBill = await utilityService.markBillUnpaid(id);
+    if (!updatedBill) {
+      return res.status(404).json({ message: 'Bill not found' });
+    }
+    res.json(updatedBill);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 const generateIcs = async (req, res) => {
   try {
     const { id } = req.params;
@@ -108,10 +122,44 @@ END:VCALENDAR`;
   }
 };
 
+const updateBill = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { branch_name, bill_type, bill_no, amount, due_date, notes } = req.body;
+    const updatedBill = await utilityService.updateBill(id, { 
+      branch_name, bill_type, bill_no, amount, due_date, notes 
+    });
+    if (!updatedBill) {
+      return res.status(404).json({ message: 'Bill not found' });
+    }
+    res.json(updatedBill);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+const deleteBill = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedBill = await utilityService.deleteBill(id);
+    if (!deletedBill) {
+      return res.status(404).json({ message: 'Bill not found' });
+    }
+    res.json({ message: 'Bill deleted successfully', bill: deletedBill });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 module.exports = {
   getBills,
   createBill,
   getBillById,
   markBillPaid,
+  markBillUnpaid,
   generateIcs,
+  updateBill,
+  deleteBill,
 };

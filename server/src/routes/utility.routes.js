@@ -47,6 +47,27 @@ router.patch(
   utilityController.markBillPaid
 );
 
+router.patch(
+  '/:id/mark-unpaid', 
+  requirePermission(MODULE_KEY, 'update'), 
+  utilityController.markBillUnpaid
+);
+
+// PUT /api/utilities/:id - Update Bill
+router.put(
+  '/:id', 
+  requirePermission(MODULE_KEY, 'update'), 
+  upload.single('attachment'),
+  utilityController.updateBill
+);
+
+// DELETE /api/utilities/:id - Delete Bill
+router.delete(
+  '/:id', 
+  requirePermission(MODULE_KEY, 'delete'), 
+  utilityController.deleteBill
+);
+
 router.get(
   '/:id/calendar.ics', 
   requirePermission(MODULE_KEY, 'view'), 

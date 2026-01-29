@@ -106,6 +106,64 @@ const markBillUnpaid = async (req, res) => {
   }
 };
 
+const deleteCustomer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedCustomer = await creditService.deleteCustomer(id);
+    if (!deletedCustomer) {
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+    res.json({ message: 'Customer deleted successfully', customer: deletedCustomer });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+const updateCustomer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { full_name, phone, address, notes } = req.body;
+    const updatedCustomer = await creditService.updateCustomer(id, { full_name, phone, address, notes });
+    if (!updatedCustomer) {
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+    res.json(updatedCustomer);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+const updateBill = async (req, res) => {
+  try {
+    const { billId } = req.params;
+    const { bill_no, bill_date, amount } = req.body;
+    const updatedBill = await creditService.updateBill(billId, { bill_no, bill_date, amount });
+    if (!updatedBill) {
+      return res.status(404).json({ message: 'Bill not found' });
+    }
+    res.json(updatedBill);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+const deleteBill = async (req, res) => {
+  try {
+    const { billId } = req.params;
+    const deletedBill = await creditService.deleteBill(billId);
+    if (!deletedBill) {
+      return res.status(404).json({ message: 'Bill not found' });
+    }
+    res.json({ message: 'Bill deleted successfully', bill: deletedBill });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 module.exports = {
   getCustomers,
   createCustomer,
@@ -114,4 +172,8 @@ module.exports = {
   createBill,
   markBillPaid,
   markBillUnpaid,
+  deleteCustomer,
+  updateCustomer,
+  updateBill,
+  deleteBill,
 };

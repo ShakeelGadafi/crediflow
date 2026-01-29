@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../../api/apiClient';
 import { Link } from 'react-router-dom';
-import { Plus, Settings, BarChart2 } from 'lucide-react';
+import { Plus, Settings, BarChart2, X } from 'lucide-react';
+import Button from '../../components/Button';
+import Table from '../../components/Table';
 
 export default function ExpenditureList() {
     const [items, setItems] = useState([]);
     const [sections, setSections] = useState([]);
-    const [categories, setCategories] = useState([]); // All categories or fetched on demand? Fetching all for simplicity if list is small, or by section.
-    // Better to fetch categories when section is selected. 
-    // But for list display, backend usually joins names.
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     
@@ -63,58 +62,78 @@ export default function ExpenditureList() {
         } catch (e) { alert('Failed to add expenditure'); }
     };
 
-    if (loading) return <div>Loading...</div>;
-
     return (
-        <div>
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Expenditure</h1>
-                <div className="flex gap-2">
-                    <Link to="sections" className="px-4 py-2 border rounded flex items-center hover:bg-gray-50">
-                        <Settings className="w-4 h-4 mr-2"/> Sections
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Expenditure</h1>
+                    <p className="text-sm text-gray-500 mt-1">Track and manage daily expenses</p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <Link to="sections">
+                        <Button variant="secondary" icon={Settings} size="sm">
+                            Sections
+                        </Button>
                     </Link>
-                    <Link to="summary" className="px-4 py-2 border rounded flex items-center hover:bg-gray-50">
-                        <BarChart2 className="w-4 h-4 mr-2"/> Summary
+                    <Link to="summary">
+                        <Button variant="secondary" icon={BarChart2} size="sm">
+                            Summary
+                        </Button>
                     </Link>
-                    <button onClick={() => setShowModal(true)} className="bg-indigo-600 text-white px-4 py-2 rounded flex items-center hover:bg-indigo-700">
-                        <Plus className="w-4 h-4 mr-2" /> Add Expenditure
-                    </button>
+                    <Button onClick={() => setShowModal(true)} icon={Plus}>
+                        Add Expenditure
+                    </Button>
                 </div>
             </div>
 
-            <div className="bg-white shadow rounded-lg overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Section</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                        {items.map(i => (
-                            <tr key={i.id}>
-                                <td className="px-6 py-4 text-sm text-gray-900">{new Date(i.expense_date).toLocaleDateString()}</td>
-                                <td className="px-6 py-4 text-sm text-gray-500">{i.section_name}</td>
-                                <td className="px-6 py-4 text-sm text-gray-500">{i.category_name}</td>
-                                <td className="px-6 py-4 text-sm text-gray-500">{i.description}</td>
-                                <td className="px-6 py-4 text-sm font-medium">${Number(i.amount).toLocaleString()}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            {/* Table */}
+            <Table 
+                loading={loading}
+                columns={[
+                    { 
+                        header: 'Date', 
+                        render: (row) => (
+                            <span className="text-gray-900 font-medium">
+                                {new Date(row.expense_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </span>
+                        )
+                    },
+                    { 
+                        header: 'Section', 
+                        render: (row) => (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
+                                {row.section_name}
+                            </span>
+                        )
+                    },
+                    { header: 'Category', render: (row) => <span className="text-gray-600">{row.category_name}</span> },
+                    { header: 'Description', render: (row) => <span className="text-gray-600">{row.description || '—'}</span> },
+                    { 
+                        header: 'Amount', 
+                        render: (row) => <span className="font-semibold text-gray-900">${Number(row.amount).toLocaleString()}</span>
+                    }
+                ]}
+                data={items}
+                emptyMessage="No expenditure records found."
+            />
 
+            {/* Add Modal */}
             {showModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded-lg w-96">
-                        <h2 className="text-xl font-bold mb-4">Add Expenditure</h2>
-                        <form onSubmit={handleCreate}>
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium mb-1">Section</label>
-                                <select required className="w-full border rounded p-2" 
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-scaleIn">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                            <h2 className="text-lg font-semibold text-gray-900">Add Expenditure</h2>
+                            <button onClick={() => setShowModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <form onSubmit={handleCreate} className="p-6 space-y-5">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Section</label>
+                                <select 
+                                    required 
+                                    className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
                                     value={newItem.section_id} 
                                     onChange={e => handleSectionChange(e.target.value)}
                                 >
@@ -122,9 +141,11 @@ export default function ExpenditureList() {
                                     {sections.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                 </select>
                             </div>
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium mb-1">Category</label>
-                                <select required className="w-full border rounded p-2" 
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Category</label>
+                                <select 
+                                    required 
+                                    className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-50 disabled:text-gray-400" 
                                     value={newItem.category_id} 
                                     onChange={e => setNewItem({...newItem, category_id: e.target.value})}
                                     disabled={!newItem.section_id}
@@ -133,33 +154,51 @@ export default function ExpenditureList() {
                                     {sectionCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                 </select>
                             </div>
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium mb-1">Amount</label>
-                                <input required type="number" step="0.01" className="w-full border rounded p-2" 
-                                    value={newItem.amount} onChange={e => setNewItem({...newItem, amount: e.target.value})}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Amount</label>
+                                    <input 
+                                        required 
+                                        type="number" 
+                                        step="0.01" 
+                                        className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                                        value={newItem.amount} 
+                                        onChange={e => setNewItem({...newItem, amount: e.target.value})}
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Date</label>
+                                    <input 
+                                        required 
+                                        type="date" 
+                                        className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                                        value={newItem.expense_date} 
+                                        onChange={e => setNewItem({...newItem, expense_date: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+                                <input 
+                                    type="text" 
+                                    className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                                    value={newItem.description} 
+                                    onChange={e => setNewItem({...newItem, description: e.target.value})}
+                                    placeholder="Optional description"
                                 />
                             </div>
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium mb-1">Date</label>
-                                <input required type="date" className="w-full border rounded p-2" 
-                                    value={newItem.expense_date} onChange={e => setNewItem({...newItem, expense_date: e.target.value})}
-                                />
-                            </div>
-                             <div className="mb-4">
-                                <label className="block text-sm font-medium mb-1">Description</label>
-                                <input type="text" className="w-full border rounded p-2" 
-                                    value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})}
-                                />
-                            </div>
-                             <div className="mb-4">
-                                <label className="block text-sm font-medium mb-1">Attachment</label>
-                                <input type="file" className="w-full border rounded p-2" 
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Attachment</label>
+                                <input 
+                                    type="file" 
+                                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
                                     onChange={e => setAttachment(e.target.files[0])}
                                 />
                             </div>
-                            <div className="flex justify-end gap-2">
-                                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border rounded hover:bg-gray-50">Cancel</button>
-                                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Save</button>
+                            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                                <Button type="button" onClick={() => setShowModal(false)} variant="ghost">Cancel</Button>
+                                <Button type="submit">Save Expenditure</Button>
                             </div>
                         </form>
                     </div>

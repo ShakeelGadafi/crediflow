@@ -71,9 +71,44 @@ const markBillPaid = async (id) => {
   return result.rows[0];
 };
 
+const markBillUnpaid = async (id) => {
+  const result = await db.query(
+    "UPDATE utility_bills SET status='UNPAID', paid_date=NULL WHERE id=$1 RETURNING *",
+    [id]
+  );
+  return result.rows[0];
+};
+
+const updateBill = async (id, data) => {
+  const { branch_name, bill_type, bill_no, amount, due_date, notes } = data;
+  const result = await db.query(
+    `UPDATE utility_bills 
+     SET branch_name = COALESCE($1, branch_name), 
+         bill_type = COALESCE($2, bill_type), 
+         bill_no = COALESCE($3, bill_no), 
+         amount = COALESCE($4, amount),
+         due_date = COALESCE($5, due_date),
+         notes = COALESCE($6, notes)
+     WHERE id = $7 RETURNING *`,
+    [branch_name, bill_type, bill_no, amount, due_date, notes, id]
+  );
+  return result.rows[0];
+};
+
+const deleteBill = async (id) => {
+  const result = await db.query(
+    'DELETE FROM utility_bills WHERE id = $1 RETURNING *',
+    [id]
+  );
+  return result.rows[0];
+};
+
 module.exports = {
   getBills,
   createBill,
   getBillById,
   markBillPaid,
+  markBillUnpaid,
+  updateBill,
+  deleteBill,
 };

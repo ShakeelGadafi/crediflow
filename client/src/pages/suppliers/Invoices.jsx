@@ -1,9 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import apiClient from '../../api/apiClient';
-import { Plus, CheckCircle, FileText, AlertCircle, Search, Calendar, X, Download, Eye, ChevronDown } from 'lucide-react';
+import { Plus, FileText, Search, Calendar, X, Download, Eye, ChevronDown, Upload, AlertCircle, Pencil, Trash2 } from 'lucide-react';
+import Button from '../../components/Button';
+import Badge from '../../components/Badge';
 
 export default function Invoices() {
-    const [activeTab, setActiveTab] = useState('all'); // all, due_soon, overdue, paid
+    const [activeTab, setActiveTab] = useState('all');
     const [invoices, setInvoices] = useState([]);
     const [loading, setLoading] = useState(false);
     const [showModal, setShowModal] = useState(false);
@@ -16,7 +18,7 @@ export default function Invoices() {
     // Attachment Viewer
     const [viewerOpen, setViewerOpen] = useState(false);
     const [viewerUrl, setViewerUrl] = useState('');
-    const [viewerType, setViewerType] = useState(''); // 'image' or 'pdf'
+    const [viewerType, setViewerType] = useState('');
     
     // New Invoice State
     const [newInvoice, setNewInvoice] = useState({
@@ -24,6 +26,17 @@ export default function Invoices() {
         amount: '', invoice_date: new Date().toISOString().split('T')[0], credit_days: 30, notes: ''
     });
     const [attachment, setAttachment] = useState(null);
+    
+    // Edit Invoice State
+    const [editModal, setEditModal] = useState({ open: false, invoice: null });
+    const [editInvoice, setEditInvoice] = useState({
+        supplier_name: '', grn_no: '', invoice_no: '', 
+        amount: '', invoice_date: '', credit_days: 30, notes: ''
+    });
+    
+    // Delete Invoice State
+    const [deleteModal, setDeleteModal] = useState({ open: false, invoice: null });
+    const [actionLoading, setActionLoading] = useState(false);
 
     const fetchInvoices = useCallback(async () => {
         setLoading(true);
@@ -97,6 +110,48 @@ export default function Invoices() {
         }
     };
 
+    const openEditModal = (invoice) => {
+        setEditInvoice({
+            supplier_name: invoice.supplier_name || '',
+            grn_no: invoice.grn_no || '',
+            invoice_no: invoice.invoice_no || '',
+            amount: invoice.amount || '',
+            invoice_date: invoice.invoice_date ? new Date(invoice.invoice_date).toISOString().split('T')[0] : '',
+            credit_days: invoice.credit_days || 30,
+            notes: invoice.notes || ''
+        });
+        setEditModal({ open: true, invoice });
+    };
+
+    const handleEditInvoice = async (e) => {
+        e.preventDefault();
+        if (!editModal.invoice) return;
+        setActionLoading(true);
+        try {
+            await apiClient.put(`/api/suppliers/invoices/${editModal.invoice.id}`, editInvoice);
+            setEditModal({ open: false, invoice: null });
+            fetchInvoices();
+        } catch (e) {
+            alert('Failed to update invoice');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleDeleteInvoice = async () => {
+        if (!deleteModal.invoice) return;
+        setActionLoading(true);
+        try {
+            await apiClient.delete(`/api/suppliers/invoices/${deleteModal.invoice.id}`);
+            setDeleteModal({ open: false, invoice: null });
+            fetchInvoices();
+        } catch (e) {
+            alert('Failed to delete invoice');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     const clearFilters = () => {
         setSearchQuery('');
         setDateFrom('');
@@ -161,24 +216,30 @@ export default function Invoices() {
         const [isOpen, setIsOpen] = useState(false);
         const statuses = ['PAID', 'UNPAID', 'PENDING'];
         
+        const getVariant = (status) => {
+            if (status === 'PAID') return 'success';
+            if (status === 'PENDING') return 'warning';
+            return 'danger';
+        };
+        
         return (
             <div className="relative">
                 <button 
                     onClick={() => setIsOpen(!isOpen)}
-                    className={`px-3 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full cursor-pointer ${
-                        invoice.status === 'PAID' ? 'bg-green-100 text-green-800 hover:bg-green-200' : 
-                        invoice.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' :
-                        'bg-red-100 text-red-800 hover:bg-red-200'
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full cursor-pointer transition-colors ${
+                        invoice.status === 'PAID' ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 
+                        invoice.status === 'PENDING' ? 'bg-amber-50 text-amber-700 hover:bg-amber-100' :
+                        'bg-red-50 text-red-700 hover:bg-red-100'
                     }`}
                 >
                     {invoice.status}
-                    <ChevronDown className="w-3 h-3 ml-1" />
+                    <ChevronDown className="w-3 h-3" />
                 </button>
                 
                 {isOpen && (
                     <>
                         <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)}></div>
-                        <div className="absolute right-0 mt-1 w-32 bg-white rounded-md shadow-lg z-20 border border-gray-200">
+                        <div className="absolute right-0 mt-1 w-28 bg-white rounded-lg shadow-lg z-20 border border-gray-100 py-1 animate-scaleIn origin-top-right">
                             {statuses.map(status => (
                                 <button
                                     key={status}
@@ -186,8 +247,8 @@ export default function Invoices() {
                                         handleStatusChange(invoice.id, status);
                                         setIsOpen(false);
                                     }}
-                                    className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
-                                        status === invoice.status ? 'font-bold bg-gray-50' : ''
+                                    className={`block w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 ${
+                                        status === invoice.status ? 'font-medium bg-gray-50' : ''
                                     }`}
                                 >
                                     {status}
@@ -204,28 +265,32 @@ export default function Invoices() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold text-gray-900">Supplier Invoices</h1>
-                <button onClick={() => setShowModal(true)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-indigo-700 shadow-sm transition-all">
-                    <Plus className="w-4 h-4 mr-2" /> Add Invoice
-                </button>
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Supplier Invoices</h1>
+                    <p className="text-sm text-gray-500 mt-1">Track supplier payments and due dates</p>
+                </div>
+                <Button onClick={() => setShowModal(true)} icon={Plus}>
+                    Add Invoice
+                </Button>
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b space-x-1 bg-white rounded-t-lg px-4">
+            <div className="flex gap-1 p-1 bg-gray-100 rounded-lg w-fit">
                 {[
-                    { key: 'all', label: 'All Invoices' },
-                    { key: 'due_soon', label: 'Due Soon (7 Days)' },
+                    { key: 'all', label: 'All' },
+                    { key: 'due_soon', label: 'Due Soon' },
                     { key: 'overdue', label: 'Overdue' },
-                    { key: 'paid', label: 'Paid Invoices' }
+                    { key: 'paid', label: 'Paid' }
                 ].map(tab => (
                     <button 
                         key={tab.key}
                         onClick={() => setActiveTab(tab.key)} 
-                        className={`pb-3 pt-4 px-4 font-medium text-sm transition-all ${
+                        className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
                             activeTab === tab.key 
-                                ? 'border-b-2 border-indigo-600 text-indigo-600' 
-                                : 'text-gray-500 hover:text-gray-700 hover:border-b-2 hover:border-gray-300'
+                                ? 'bg-white text-gray-900 shadow-sm' 
+                                : 'text-gray-600 hover:text-gray-900'
                         }`}
                     >
                         {tab.label}
@@ -235,90 +300,86 @@ export default function Invoices() {
 
             {/* Filters (only for 'all' and 'paid' tabs) */}
             {(activeTab === 'all' || activeTab === 'paid') && (
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        {/* Search */}
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                             <input
                                 type="text"
-                                placeholder="Search by GRN or Invoice No"
-                                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                                placeholder="Search GRN or Invoice No"
+                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
                         
-                        {/* Date From */}
                         <div className="relative">
-                            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <Calendar className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                             <input
                                 type="date"
-                                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                 value={dateFrom}
                                 onChange={(e) => setDateFrom(e.target.value)}
-                                placeholder="From Date"
                             />
                         </div>
                         
-                        {/* Date To */}
                         <div className="relative">
-                            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <Calendar className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                             <input
                                 type="date"
-                                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                 value={dateTo}
                                 onChange={(e) => setDateTo(e.target.value)}
-                                placeholder="To Date"
                             />
                         </div>
                         
-                        {/* Clear Filters */}
-                        <button
-                            onClick={clearFilters}
-                            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
-                        >
-                            <X className="w-4 h-4 mr-2" />
+                        <Button variant="ghost" onClick={clearFilters} icon={X}>
                             Clear Filters
-                        </button>
+                        </Button>
                     </div>
                 </div>
             )}
 
             {/* Invoice List */}
             {loading ? (
-                <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-                    <p className="mt-4 text-gray-500">Loading invoices...</p>
+                <div className="flex items-center justify-center h-64">
+                    <div className="animate-spin rounded-full h-10 w-10 border-[3px] border-gray-200 border-t-indigo-600"></div>
                 </div>
             ) : activeTab === 'paid' && monthGroups.length > 0 ? (
                 // Grouped by Month View (PAID tab)
                 <div className="space-y-6">
                     {monthGroups.map((group, idx) => (
-                        <div key={idx} className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
-                            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-6 py-3 border-b border-gray-200">
-                                <h3 className="text-lg font-semibold text-gray-800">{group.label}</h3>
-                                <p className="text-xs text-gray-500">{group.invoices.length} invoice(s)</p>
+                        <div key={idx} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                            <div className="bg-gray-50/80 px-6 py-4 border-b border-gray-100 flex items-center gap-3">
+                                <div className="p-2 bg-indigo-100 rounded-lg">
+                                    <Calendar className="w-4 h-4 text-indigo-600" />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-semibold text-gray-900">{group.label}</h3>
+                                    <p className="text-xs text-gray-500">{group.invoices.length} invoice(s)</p>
+                                </div>
                             </div>
                             <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supplier</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice # / GRN</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paid Date</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <table className="min-w-full divide-y divide-gray-100">
+                                    <thead>
+                                        <tr className="bg-gray-50/50">
+                                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Supplier</th>
+                                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Invoice # / GRN</th>
+                                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Amount</th>
+                                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Paid Date</th>
+                                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
+                                    <tbody className="divide-y divide-gray-100">
                                         {group.invoices.map(inv => (
                                             <InvoiceRow 
                                                 key={inv.id} 
                                                 invoice={inv} 
                                                 onViewAttachment={openAttachment}
                                                 StatusDropdown={StatusDropdown}
+                                                onEdit={openEditModal}
+                                                onDelete={(inv) => setDeleteModal({ open: true, invoice: inv })}
                                             />
                                         ))}
                                     </tbody>
@@ -329,26 +390,28 @@ export default function Invoices() {
                 </div>
             ) : (
                 // Regular Table View
-                <div className="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200">
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supplier</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice # / GRN</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        <table className="min-w-full divide-y divide-gray-100">
+                            <thead>
+                                <tr className="bg-gray-50/80">
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Supplier</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Invoice # / GRN</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Amount</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Due Date</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="divide-y divide-gray-100">
                                 {invoices.map(inv => (
                                     <InvoiceRow 
                                         key={inv.id} 
                                         invoice={inv} 
                                         onViewAttachment={openAttachment}
                                         StatusDropdown={StatusDropdown}
+                                        onEdit={openEditModal}
+                                        onDelete={(inv) => setDeleteModal({ open: true, invoice: inv })}
                                     />
                                 ))}
                                 {invoices.length === 0 && (
@@ -368,101 +431,121 @@ export default function Invoices() {
 
             {/* Add Invoice Modal */}
             {showModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white p-6 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-bold text-gray-900">Add New Invoice</h2>
-                            <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
-                                <X className="w-6 h-6" />
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+                    <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl animate-scaleIn">
+                        <div className="flex justify-between items-center px-6 py-5 border-b border-gray-100">
+                            <div>
+                                <h2 className="text-lg font-semibold text-gray-900">Add New Invoice</h2>
+                                <p className="text-sm text-gray-500 mt-0.5">Enter supplier invoice details</p>
+                            </div>
+                            <button onClick={() => setShowModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                                <X className="w-5 h-5" />
                             </button>
                         </div>
-                        <form onSubmit={handleCreate} className="space-y-4">
+                        <form onSubmit={handleCreate} className="p-6 space-y-5 overflow-y-auto max-h-[calc(90vh-180px)]">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Supplier Name</label>
-                                <input required type="text" className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-indigo-500 focus:border-indigo-500" 
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Supplier Name</label>
+                                <input required type="text" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" 
+                                    placeholder="Enter supplier name"
                                     value={newInvoice.supplier_name} onChange={e => setNewInvoice({...newInvoice, supplier_name: e.target.value})}
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Invoice #</label>
-                                    <input required type="text" className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-indigo-500 focus:border-indigo-500" 
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Invoice #</label>
+                                    <input required type="text" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" 
+                                        placeholder="INV-001"
                                         value={newInvoice.invoice_no} onChange={e => setNewInvoice({...newInvoice, invoice_no: e.target.value})}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">GRN #</label>
-                                    <input type="text" className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-indigo-500 focus:border-indigo-500" 
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">GRN #</label>
+                                    <input type="text" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" 
+                                        placeholder="GRN-001"
                                         value={newInvoice.grn_no} onChange={e => setNewInvoice({...newInvoice, grn_no: e.target.value})}
                                     />
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
-                                <input required type="number" step="0.01" className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-indigo-500 focus:border-indigo-500" 
-                                    value={newInvoice.amount} onChange={e => setNewInvoice({...newInvoice, amount: e.target.value})}
-                                />
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Amount</label>
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">LKR</span>
+                                    <input required type="number" step="0.01" className="w-full border border-gray-200 rounded-lg pl-12 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" 
+                                        placeholder="0.00"
+                                        value={newInvoice.amount} onChange={e => setNewInvoice({...newInvoice, amount: e.target.value})}
+                                    />
+                                </div>
                             </div>
                             
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Date</label>
-                                    <input required type="date" className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-indigo-500 focus:border-indigo-500" 
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Invoice Date</label>
+                                    <input required type="date" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" 
                                         value={newInvoice.invoice_date} onChange={e => setNewInvoice({...newInvoice, invoice_date: e.target.value})}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Credit Days</label>
-                                    <input required type="number" className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-indigo-500 focus:border-indigo-500" 
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Credit Days</label>
+                                    <input required type="number" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" 
+                                        placeholder="30"
                                         value={newInvoice.credit_days} onChange={e => setNewInvoice({...newInvoice, credit_days: e.target.value})}
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Attachment</label>
-                                <input type="file" className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-indigo-500 focus:border-indigo-500" 
-                                    onChange={e => setAttachment(e.target.files[0])}
-                                />
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Attachment</label>
+                                <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:border-indigo-300 transition-colors">
+                                    <input type="file" className="hidden" id="invoice-attachment"
+                                        onChange={e => setAttachment(e.target.files[0])}
+                                    />
+                                    <label htmlFor="invoice-attachment" className="cursor-pointer">
+                                        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                                        <p className="text-sm text-gray-600">
+                                            {attachment ? attachment.name : 'Click to upload or drag and drop'}
+                                        </p>
+                                        <p className="text-xs text-gray-400 mt-1">PDF, PNG, JPG up to 10MB</p>
+                                    </label>
+                                </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                                <textarea rows="3" className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-indigo-500 focus:border-indigo-500" 
-                                     value={newInvoice.notes} onChange={e => setNewInvoice({...newInvoice, notes: e.target.value})}
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Notes</label>
+                                <textarea rows="3" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow resize-none" 
+                                    placeholder="Add any additional notes..."
+                                    value={newInvoice.notes} onChange={e => setNewInvoice({...newInvoice, notes: e.target.value})}
                                 />
                             </div>
-
-                            <div className="flex justify-end gap-3 pt-4">
-                                <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors">Cancel</button>
-                                <button type="submit" className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium shadow-sm transition-colors">Save Invoice</button>
-                            </div>
                         </form>
+                        <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+                            <Button variant="ghost" onClick={() => setShowModal(false)}>Cancel</Button>
+                            <Button onClick={handleCreate}>Save Invoice</Button>
+                        </div>
                     </div>
                 </div>
             )}
 
             {/* Attachment Viewer Modal */}
             {viewerOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4" onClick={closeViewer}>
+                <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 animate-fadeIn" onClick={closeViewer}>
                     <button 
                         onClick={closeViewer}
-                        className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors bg-black bg-opacity-50 rounded-full p-2"
+                        className="absolute top-6 right-6 text-white/80 hover:text-white transition-colors bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-xl p-3"
                     >
-                        <X className="w-8 h-8" />
+                        <X className="w-6 h-6" />
                     </button>
                     
-                    <div className="max-w-6xl max-h-[90vh] w-full" onClick={(e) => e.stopPropagation()}>
+                    <div className="max-w-6xl max-h-[90vh] w-full animate-scaleIn" onClick={(e) => e.stopPropagation()}>
                         {viewerType === 'image' && (
                             <img 
                                 src={viewerUrl} 
                                 alt="Invoice Attachment" 
-                                className="max-w-full max-h-[90vh] mx-auto rounded-lg shadow-2xl"
+                                className="max-w-full max-h-[90vh] mx-auto rounded-xl shadow-2xl"
                             />
                         )}
                         {viewerType === 'pdf' && (
                             <iframe 
                                 src={viewerUrl} 
-                                className="w-full h-[90vh] rounded-lg shadow-2xl bg-white"
+                                className="w-full h-[90vh] rounded-xl shadow-2xl bg-white"
                                 title="PDF Viewer"
                             />
                         )}
@@ -471,12 +554,108 @@ export default function Invoices() {
                     <a
                         href={viewerUrl}
                         download
-                        className="absolute bottom-4 right-4 bg-white text-gray-900 px-4 py-2 rounded-lg flex items-center hover:bg-gray-100 transition-colors shadow-lg"
+                        className="absolute bottom-6 right-6 bg-white text-gray-900 px-5 py-2.5 rounded-lg flex items-center gap-2 hover:bg-gray-100 transition-colors shadow-lg font-medium"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <Download className="w-4 h-4 mr-2" />
+                        <Download className="w-4 h-4" />
                         Download
                     </a>
+                </div>
+            )}
+
+            {/* Edit Invoice Modal */}
+            {editModal.open && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+                    <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl animate-scaleIn">
+                        <div className="flex justify-between items-center px-6 py-5 border-b border-gray-100">
+                            <div>
+                                <h2 className="text-lg font-semibold text-gray-900">Edit Invoice</h2>
+                                <p className="text-sm text-gray-500 mt-0.5">Update invoice details</p>
+                            </div>
+                            <button onClick={() => setEditModal({ open: false, invoice: null })} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <form onSubmit={handleEditInvoice} className="p-6 space-y-5 overflow-y-auto max-h-[calc(90vh-180px)]">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Supplier Name</label>
+                                <input required type="text" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" 
+                                    value={editInvoice.supplier_name} onChange={e => setEditInvoice({...editInvoice, supplier_name: e.target.value})}
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Invoice #</label>
+                                    <input required type="text" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" 
+                                        value={editInvoice.invoice_no} onChange={e => setEditInvoice({...editInvoice, invoice_no: e.target.value})}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">GRN #</label>
+                                    <input type="text" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" 
+                                        value={editInvoice.grn_no} onChange={e => setEditInvoice({...editInvoice, grn_no: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Amount</label>
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">LKR</span>
+                                    <input required type="number" step="0.01" className="w-full border border-gray-200 rounded-lg pl-12 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" 
+                                        value={editInvoice.amount} onChange={e => setEditInvoice({...editInvoice, amount: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Invoice Date</label>
+                                    <input required type="date" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" 
+                                        value={editInvoice.invoice_date} onChange={e => setEditInvoice({...editInvoice, invoice_date: e.target.value})}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Credit Days</label>
+                                    <input required type="number" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow" 
+                                        value={editInvoice.credit_days} onChange={e => setEditInvoice({...editInvoice, credit_days: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Notes</label>
+                                <textarea rows="3" className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow resize-none" 
+                                    value={editInvoice.notes} onChange={e => setEditInvoice({...editInvoice, notes: e.target.value})}
+                                />
+                            </div>
+                        </form>
+                        <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+                            <Button variant="ghost" onClick={() => setEditModal({ open: false, invoice: null })}>Cancel</Button>
+                            <Button onClick={handleEditInvoice} disabled={actionLoading}>{actionLoading ? 'Saving...' : 'Save Changes'}</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Invoice Confirmation Modal */}
+            {deleteModal.open && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+                    <div className="bg-white rounded-xl w-full max-w-md shadow-2xl animate-scaleIn overflow-hidden">
+                        <div className="flex justify-between items-center px-6 py-5 border-b border-gray-100">
+                            <h2 className="text-lg font-semibold text-gray-900">Delete Invoice</h2>
+                            <button onClick={() => setDeleteModal({ open: false, invoice: null })} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            <p className="text-gray-600">
+                                Are you sure you want to delete invoice <strong>{deleteModal.invoice?.invoice_no}</strong> from <strong>{deleteModal.invoice?.supplier_name}</strong>? 
+                                This action cannot be undone.
+                            </p>
+                        </div>
+                        <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+                            <Button variant="ghost" onClick={() => setDeleteModal({ open: false, invoice: null })}>Cancel</Button>
+                            <Button variant="danger" onClick={handleDeleteInvoice} disabled={actionLoading}>{actionLoading ? 'Deleting...' : 'Delete Invoice'}</Button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
@@ -484,60 +663,79 @@ export default function Invoices() {
 }
 
 // Separate component for invoice row to avoid repetition
-function InvoiceRow({ invoice, onViewAttachment, StatusDropdown }) {
+function InvoiceRow({ invoice, onViewAttachment, StatusDropdown, onEdit, onDelete }) {
     const isPaid = invoice.status === 'PAID';
     const isOverdue = new Date(invoice.due_date) < new Date() && invoice.status === 'UNPAID';
     
     return (
-        <tr className="hover:bg-gray-50 transition-colors">
+        <tr className="hover:bg-indigo-50/30 transition-colors">
             <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-medium text-gray-900">{invoice.supplier_name}</div>
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-sm font-semibold">
+                        {invoice.supplier_name?.charAt(0)?.toUpperCase() || 'S'}
+                    </div>
+                    <span className="text-sm font-medium text-gray-900">{invoice.supplier_name}</span>
+                </div>
             </td>
             <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900">Inv: {invoice.invoice_no}</div>
+                <div className="text-sm font-medium text-gray-900">{invoice.invoice_no}</div>
                 <div className="text-xs text-gray-500">GRN: {invoice.grn_no || 'N/A'}</div>
             </td>
             <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm font-semibold text-gray-900">
-                    ${Number(invoice.amount).toLocaleString()}
+                    LKR {Number(invoice.amount).toLocaleString()}
                 </div>
             </td>
             <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-500">
-                    {isPaid && invoice.paid_date ? (
-                        <>
-                            <div className="text-gray-900 font-medium">
-                                {new Date(invoice.paid_date).toLocaleDateString()}
-                            </div>
-                            <div className="text-xs text-gray-400">Paid</div>
-                        </>
-                    ) : (
-                        <>
+                {isPaid && invoice.paid_date ? (
+                    <div>
+                        <div className="text-sm font-medium text-gray-900">
+                            {new Date(invoice.paid_date).toLocaleDateString()}
+                        </div>
+                        <div className="text-xs text-emerald-600">Paid</div>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-1.5">
+                        <span className={`text-sm ${isOverdue ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
                             {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A'}
-                            {isOverdue && <AlertCircle className="w-4 h-4 text-red-500 inline ml-1"/>}
-                        </>
-                    )}
-                </div>
+                        </span>
+                        {isOverdue && <AlertCircle className="w-4 h-4 text-red-500" />}
+                    </div>
+                )}
             </td>
             <td className="px-6 py-4 whitespace-nowrap">
                 <StatusDropdown invoice={invoice} />
             </td>
-            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                <div className="flex items-center space-x-3">
+            <td className="px-6 py-4 whitespace-nowrap">
+                <div className="flex items-center gap-1">
                     {invoice.attachment_url && (
                         <button 
                             onClick={() => onViewAttachment(invoice.attachment_url)} 
-                            className="text-indigo-600 hover:text-indigo-900 transition-colors" 
+                            className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" 
                             title="View Attachment"
                         >
                             <Eye className="w-4 h-4"/>
                         </button>
                     )}
                     {invoice.notes && (
-                        <span className="text-gray-400" title={invoice.notes}>
+                        <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" title={invoice.notes}>
                             <FileText className="w-4 h-4"/>
-                        </span>
+                        </button>
                     )}
+                    <button 
+                        onClick={() => onEdit(invoice)} 
+                        className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" 
+                        title="Edit Invoice"
+                    >
+                        <Pencil className="w-4 h-4"/>
+                    </button>
+                    <button 
+                        onClick={() => onDelete(invoice)} 
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" 
+                        title="Delete Invoice"
+                    >
+                        <Trash2 className="w-4 h-4"/>
+                    </button>
                 </div>
             </td>
         </tr>

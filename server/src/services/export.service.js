@@ -1,12 +1,13 @@
 const db = require('../config/db');
+const XLSX = require('xlsx');
 
-// Helper to format Date for CSV
+// Helper to format Date
 const formatDate = (date) => {
     if (!date) return '';
     return new Date(date).toISOString().split('T')[0];
 };
 
-const getCreditBillsCSV = async () => {
+const getCreditBillsExcel = async () => {
     const query = `
       SELECT b.id, c.full_name as customer, b.bill_no, b.bill_date, b.amount, b.status, b.paid_date
       FROM credit_bills b
@@ -15,18 +16,30 @@ const getCreditBillsCSV = async () => {
     `;
     const result = await db.query(query);
     
-    // Header
-    let csv = 'ID,Customer,Bill No,Bill Date,Amount,Status,Paid Date\n';
+    const data = result.rows.map(row => ({
+        'ID': row.id,
+        'Customer': row.customer,
+        'Bill No': row.bill_no,
+        'Bill Date': formatDate(row.bill_date),
+        'Amount': Number(row.amount),
+        'Status': row.status,
+        'Paid Date': formatDate(row.paid_date)
+    }));
     
-    // Rows
-    result.rows.forEach(row => {
-        csv += `${row.id},"${row.customer}",${row.bill_no},${formatDate(row.bill_date)},${row.amount},${row.status},${formatDate(row.paid_date)}\n`;
-    });
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Credit Bills');
     
-    return csv;
+    // Set column widths
+    worksheet['!cols'] = [
+        { wch: 8 }, { wch: 25 }, { wch: 15 }, { wch: 12 }, 
+        { wch: 12 }, { wch: 10 }, { wch: 12 }
+    ];
+    
+    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 };
 
-const getUtilityBillsCSV = async () => {
+const getUtilityBillsExcel = async () => {
     const query = `
       SELECT id, branch_name, bill_type, bill_no, amount, due_date, status, paid_date
       FROM utility_bills
@@ -34,15 +47,30 @@ const getUtilityBillsCSV = async () => {
     `;
     const result = await db.query(query);
     
-    let csv = 'ID,Branch,Type,Bill No,Amount,Due Date,Status,Paid Date\n';
-    result.rows.forEach(row => {
-        csv += `${row.id},"${row.branch_name}","${row.bill_type}",${row.bill_no},${row.amount},${formatDate(row.due_date)},${row.status},${formatDate(row.paid_date)}\n`;
-    });
+    const data = result.rows.map(row => ({
+        'ID': row.id,
+        'Branch': row.branch_name,
+        'Type': row.bill_type,
+        'Bill No': row.bill_no,
+        'Amount': Number(row.amount),
+        'Due Date': formatDate(row.due_date),
+        'Status': row.status,
+        'Paid Date': formatDate(row.paid_date)
+    }));
     
-    return csv;
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Utility Bills');
+    
+    worksheet['!cols'] = [
+        { wch: 8 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, 
+        { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 12 }
+    ];
+    
+    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 };
 
-const getExpendituresCSV = async () => {
+const getExpendituresExcel = async () => {
     const query = `
       SELECT e.id, s.name as section, c.name as category, e.amount, e.expense_date, e.description
       FROM expenditures e
@@ -52,33 +80,62 @@ const getExpendituresCSV = async () => {
     `;
     const result = await db.query(query);
     
-    let csv = 'ID,Section,Category,Amount,Date,Description\n';
-    result.rows.forEach(row => {
-        csv += `${row.id},"${row.section}","${row.category}",${row.amount},${formatDate(row.expense_date)},"${row.description || ''}"\n`;
-    });
+    const data = result.rows.map(row => ({
+        'ID': row.id,
+        'Section': row.section,
+        'Category': row.category,
+        'Amount': Number(row.amount),
+        'Date': formatDate(row.expense_date),
+        'Description': row.description || ''
+    }));
     
-    return csv;
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Expenditures');
+    
+    worksheet['!cols'] = [
+        { wch: 8 }, { wch: 20 }, { wch: 20 }, { wch: 12 }, 
+        { wch: 12 }, { wch: 40 }
+    ];
+    
+    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 };
 
-const getSupplierInvoicesCSV = async () => {
+const getSupplierInvoicesExcel = async () => {
     const query = `
-      SELECT id, supplier_name, grn_no, invoice_no, invoice_date, amount, due_date, status
+      SELECT id, supplier_name, grn_no, invoice_no, invoice_date, amount, due_date, status, paid_date
       FROM supplier_invoices
       ORDER BY invoice_date DESC
     `;
     const result = await db.query(query);
     
-    let csv = 'ID,Supplier,GRN No,Invoice No,Invoice Date,Amount,Due Date,Status\n';
-    result.rows.forEach(row => {
-        csv += `${row.id},"${row.supplier_name}",${row.grn_no},${row.invoice_no},${formatDate(row.invoice_date)},${row.amount},${formatDate(row.due_date)},${row.status}\n`;
-    });
+    const data = result.rows.map(row => ({
+        'ID': row.id,
+        'Supplier': row.supplier_name,
+        'GRN No': row.grn_no,
+        'Invoice No': row.invoice_no,
+        'Invoice Date': formatDate(row.invoice_date),
+        'Amount': Number(row.amount),
+        'Due Date': formatDate(row.due_date),
+        'Status': row.status,
+        'Paid Date': formatDate(row.paid_date)
+    }));
     
-    return csv;
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Supplier Invoices');
+    
+    worksheet['!cols'] = [
+        { wch: 8 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, 
+        { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 12 }
+    ];
+    
+    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 };
 
 module.exports = {
-    getCreditBillsCSV,
-    getUtilityBillsCSV,
-    getExpendituresCSV,
-    getSupplierInvoicesCSV
+    getCreditBillsExcel,
+    getUtilityBillsExcel,
+    getExpendituresExcel,
+    getSupplierInvoicesExcel
 };

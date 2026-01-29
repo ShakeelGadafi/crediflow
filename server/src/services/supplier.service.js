@@ -111,6 +111,39 @@ const updateStatus = async (id, status) => {
   return result.rows[0];
 };
 
+const updateInvoice = async (id, data) => {
+  const { supplier_name, grn_no, invoice_no, invoice_date, amount, credit_days, notes } = data;
+  
+  // Calculate new due date if invoice_date or credit_days changed
+  let due_date = null;
+  if (invoice_date && credit_days !== undefined) {
+    due_date = calculateDueDate(invoice_date, credit_days);
+  }
+  
+  const result = await db.query(
+    `UPDATE supplier_invoices 
+     SET supplier_name = COALESCE($1, supplier_name), 
+         grn_no = COALESCE($2, grn_no), 
+         invoice_no = COALESCE($3, invoice_no), 
+         invoice_date = COALESCE($4, invoice_date), 
+         amount = COALESCE($5, amount),
+         credit_days = COALESCE($6, credit_days),
+         notes = COALESCE($7, notes),
+         due_date = COALESCE($8, due_date)
+     WHERE id = $9 RETURNING *`,
+    [supplier_name, grn_no, invoice_no, invoice_date, amount, credit_days, notes, due_date, id]
+  );
+  return result.rows[0];
+};
+
+const deleteInvoice = async (id) => {
+  const result = await db.query(
+    'DELETE FROM supplier_invoices WHERE id = $1 RETURNING *',
+    [id]
+  );
+  return result.rows[0];
+};
+
 module.exports = {
   createInvoice,
   getInvoices,
@@ -118,5 +151,7 @@ module.exports = {
   getOverdueInvoices,
   markPaid,
   updateStatus,
-  getInvoiceById
+  getInvoiceById,
+  updateInvoice,
+  deleteInvoice,
 };

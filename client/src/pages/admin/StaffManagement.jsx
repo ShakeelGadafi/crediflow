@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../../api/apiClient';
-import { Plus, Users, UserCog, UserCheck, UserX, Shield, Check } from 'lucide-react';
+import { Plus, UserCheck, UserX, Shield, Mail, User } from 'lucide-react';
 import Modal from '../../components/Modal';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
+import Badge from '../../components/Badge';
+import Table from '../../components/Table';
 
 export default function StaffManagement() {
     const [staff, setStaff] = useState([]);
@@ -17,7 +19,6 @@ export default function StaffManagement() {
     // Permissions State
     const [selectedUser, setSelectedUser] = useState(null);
     const [permissions, setPermissions] = useState([]);
-    const [modules, setModules] = useState([]);
 
     const fetchStaff = async () => {
         try {
@@ -55,8 +56,6 @@ export default function StaffManagement() {
     const openPermissionsModal = async (user) => {
         setSelectedUser(user);
         try {
-            // Fetch modules and user's current permissions
-            // Assuming we added this endpoint
             const res = await apiClient.get(`/api/admin/staff/${user.id}/permissions`);
             setPermissions(res.data);
             setShowPermModal(true);
@@ -93,71 +92,92 @@ export default function StaffManagement() {
         }
     };
 
-    if (loading) return <div>Loading...</div>;
-
     return (
-        <div>
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-gray-900">Staff Management</h1>
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Staff Management</h1>
+                    <p className="text-sm text-gray-500 mt-1">Manage team members and their permissions</p>
+                </div>
                 <Button onClick={() => setShowCreateModal(true)} icon={Plus}>
                     Add Staff
                 </Button>
             </div>
 
-            <div className="bg-white shadow rounded-lg overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                        {staff.map(user => (
-                            <tr key={user.id}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.full_name}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.role}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                        {user.is_active ? 'Active' : 'Inactive'}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex space-x-3">
-                                    <button 
-                                        onClick={() => openPermissionsModal(user)}
-                                        className="text-indigo-600 hover:text-indigo-900 flex items-center"
-                                        title="Manage Permissions"
-                                    >
-                                        <Shield className="w-5 h-5 mr-1" /> Permissions
-                                    </button>
-                                    <button 
-                                        onClick={() => handleToggleStatus(user.id, user.is_active)}
-                                        className={`${user.is_active ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'} flex items-center`}
-                                        title={user.is_active ? "Deactivate User" : "Activate User"}
-                                    >
-                                        {user.is_active ? <UserX className="w-5 h-5 mr-1" /> : <UserCheck className="w-5 h-5 mr-1" />}
-                                        {user.is_active ? 'Deactivate' : 'Activate'}
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            {/* Table */}
+            <Table 
+                loading={loading}
+                columns={[
+                    { 
+                        header: 'Staff Member', 
+                        render: (row) => (
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-sm font-medium">
+                                    {row.full_name?.charAt(0)?.toUpperCase()}
+                                </div>
+                                <div>
+                                    <p className="font-medium text-gray-900">{row.full_name}</p>
+                                    <p className="text-xs text-gray-500">{row.email}</p>
+                                </div>
+                            </div>
+                        )
+                    },
+                    { 
+                        header: 'Role', 
+                        render: (row) => (
+                            <Badge variant={row.role === 'ADMIN' ? 'primary' : 'default'}>
+                                {row.role}
+                            </Badge>
+                        )
+                    },
+                    { 
+                        header: 'Status', 
+                        render: (row) => (
+                            <Badge variant={row.is_active ? 'success' : 'danger'} dot>
+                                {row.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
+                        )
+                    },
+                    { 
+                        header: 'Actions', 
+                        render: (row) => (
+                            <div className="flex items-center gap-2">
+                                <Button 
+                                    size="xs"
+                                    variant="ghost"
+                                    onClick={() => openPermissionsModal(row)}
+                                    icon={Shield}
+                                >
+                                    Permissions
+                                </Button>
+                                <Button 
+                                    size="xs"
+                                    variant={row.is_active ? 'ghost' : 'ghost'}
+                                    onClick={() => handleToggleStatus(row.id, row.is_active)}
+                                    icon={row.is_active ? UserX : UserCheck}
+                                    className={row.is_active ? 'text-red-600 hover:bg-red-50' : 'text-emerald-600 hover:bg-emerald-50'}
+                                >
+                                    {row.is_active ? 'Deactivate' : 'Activate'}
+                                </Button>
+                            </div>
+                        )
+                    }
+                ]}
+                data={staff}
+                emptyMessage="No staff members found."
+            />
 
             {/* Create Staff Modal */}
             <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Add New Staff">
-                <form onSubmit={handleCreate} className="space-y-4">
+                <form onSubmit={handleCreate} className="space-y-5">
                     <Input
                         label="Full Name"
                         required
                         value={newStaff.full_name}
                         onChange={e => setNewStaff({...newStaff, full_name: e.target.value})}
                         placeholder="John Doe"
+                        icon={User}
                     />
                     <Input
                         label="Email"
@@ -166,6 +186,7 @@ export default function StaffManagement() {
                         value={newStaff.email}
                         onChange={e => setNewStaff({...newStaff, email: e.target.value})}
                         placeholder="john@example.com"
+                        icon={Mail}
                     />
                     <Input
                         label="Password"
@@ -173,53 +194,53 @@ export default function StaffManagement() {
                         required
                         value={newStaff.password}
                         onChange={e => setNewStaff({...newStaff, password: e.target.value})}
-                        placeholder="********"
+                        placeholder="••••••••"
                     />
-                    <div className="flex justify-end gap-3 pt-4">
-                        <Button type="button" onClick={() => setShowCreateModal(false)} variant="secondary">Cancel</Button>
+                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                        <Button type="button" onClick={() => setShowCreateModal(false)} variant="ghost">Cancel</Button>
                         <Button type="submit">Create Staff</Button>
                     </div>
                 </form>
             </Modal>
 
             {/* Permissions Modal */}
-            <Modal isOpen={showPermModal} onClose={() => setShowPermModal(false)} title={`Permissions: ${selectedUser?.full_name}`} size="xl">
-                <div className="space-y-4">
-                    <p className="text-gray-500 text-sm">Configure access control for each module.</p>
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Module</th>
-                                    <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">View</th>
-                                    <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Create</th>
-                                    <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Update</th>
-                                    <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Delete</th>
+            <Modal isOpen={showPermModal} onClose={() => setShowPermModal(false)} title={`Permissions: ${selectedUser?.full_name}`} size="lg">
+                <div className="space-y-5">
+                    <p className="text-sm text-gray-500">Configure module access for this staff member.</p>
+                    <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-100">
+                        <table className="min-w-full divide-y divide-gray-100">
+                            <thead>
+                                <tr className="bg-gray-100/80">
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Module</th>
+                                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">View</th>
+                                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Create</th>
+                                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Update</th>
+                                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Delete</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-200">
+                            <tbody className="bg-white divide-y divide-gray-100">
                                 {permissions.map(p => (
-                                    <tr key={p.module_id}>
-                                        <td className="px-4 py-2 text-sm font-medium text-gray-900">{p.name}</td>
-                                        <td className="px-4 py-2 text-center">
-                                            <input type="checkbox" checked={!!p.can_view} onChange={() => handlePermissionChange(p.module_id, 'can_view')} className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"/>
+                                    <tr key={p.module_id} className="hover:bg-gray-50/50">
+                                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{p.name}</td>
+                                        <td className="px-4 py-3 text-center">
+                                            <input type="checkbox" checked={!!p.can_view} onChange={() => handlePermissionChange(p.module_id, 'can_view')} className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"/>
                                         </td>
-                                        <td className="px-4 py-2 text-center">
-                                            <input type="checkbox" checked={!!p.can_create} onChange={() => handlePermissionChange(p.module_id, 'can_create')} className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"/>
+                                        <td className="px-4 py-3 text-center">
+                                            <input type="checkbox" checked={!!p.can_create} onChange={() => handlePermissionChange(p.module_id, 'can_create')} className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"/>
                                         </td>
-                                        <td className="px-4 py-2 text-center">
-                                            <input type="checkbox" checked={!!p.can_update} onChange={() => handlePermissionChange(p.module_id, 'can_update')} className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"/>
+                                        <td className="px-4 py-3 text-center">
+                                            <input type="checkbox" checked={!!p.can_update} onChange={() => handlePermissionChange(p.module_id, 'can_update')} className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"/>
                                         </td>
-                                        <td className="px-4 py-2 text-center">
-                                            <input type="checkbox" checked={!!p.can_delete} onChange={() => handlePermissionChange(p.module_id, 'can_delete')} className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"/>
+                                        <td className="px-4 py-3 text-center">
+                                            <input type="checkbox" checked={!!p.can_delete} onChange={() => handlePermissionChange(p.module_id, 'can_delete')} className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"/>
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
-                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                        <Button type="button" onClick={() => setShowPermModal(false)} variant="secondary">Close</Button>
+                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                        <Button type="button" onClick={() => setShowPermModal(false)} variant="ghost">Cancel</Button>
                         <Button onClick={savePermissions}>Save Changes</Button>
                     </div>
                 </div>

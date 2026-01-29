@@ -93,6 +93,52 @@ const markBillUnpaid = async (billId) => {
   return result.rows[0];
 };
 
+const deleteCustomer = async (id) => {
+  // First delete all bills associated with the customer
+  await db.query('DELETE FROM credit_bills WHERE customer_id = $1', [id]);
+  // Then delete the customer
+  const result = await db.query(
+    'DELETE FROM credit_customers WHERE id = $1 RETURNING *',
+    [id]
+  );
+  return result.rows[0];
+};
+
+const updateCustomer = async (id, data) => {
+  const { full_name, phone, address, notes } = data;
+  const result = await db.query(
+    `UPDATE credit_customers 
+     SET full_name = COALESCE($1, full_name), 
+         phone = COALESCE($2, phone), 
+         address = COALESCE($3, address), 
+         notes = COALESCE($4, notes)
+     WHERE id = $5 RETURNING *`,
+    [full_name, phone, address, notes, id]
+  );
+  return result.rows[0];
+};
+
+const updateBill = async (billId, data) => {
+  const { bill_no, bill_date, amount } = data;
+  const result = await db.query(
+    `UPDATE credit_bills 
+     SET bill_no = COALESCE($1, bill_no), 
+         bill_date = COALESCE($2, bill_date), 
+         amount = COALESCE($3, amount)
+     WHERE id = $4 RETURNING *`,
+    [bill_no, bill_date, amount, billId]
+  );
+  return result.rows[0];
+};
+
+const deleteBill = async (billId) => {
+  const result = await db.query(
+    'DELETE FROM credit_bills WHERE id = $1 RETURNING *',
+    [billId]
+  );
+  return result.rows[0];
+};
+
 module.exports = {
   getCustomers,
   createCustomer,
@@ -101,4 +147,8 @@ module.exports = {
   createBill,
   markBillPaid,
   markBillUnpaid,
+  deleteCustomer,
+  updateCustomer,
+  updateBill,
+  deleteBill,
 };

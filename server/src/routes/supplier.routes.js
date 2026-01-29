@@ -59,6 +59,21 @@ router.patch(
   supplierController.updateStatus
 );
 
+// PUT /api/suppliers/invoices/:id - Update Invoice
+router.put(
+  '/invoices/:id', 
+  requirePermission(MODULE_KEY, 'update'), 
+  upload.single('attachment'),
+  supplierController.updateInvoice
+);
+
+// DELETE /api/suppliers/invoices/:id - Delete Invoice
+router.delete(
+  '/invoices/:id', 
+  requirePermission(MODULE_KEY, 'delete'), 
+  supplierController.deleteInvoice
+);
+
 // Optional: View single invoice
 router.get(
     '/invoices/:id', 

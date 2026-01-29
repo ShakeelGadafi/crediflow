@@ -75,4 +75,32 @@ router.patch(
   creditController.markBillUnpaid
 );
 
+// DELETE /api/credit/customers/:id - Delete Customer
+router.delete(
+  '/customers/:id',
+  requirePermission(MODULE_KEY, 'delete'),
+  creditController.deleteCustomer
+);
+
+// PUT /api/credit/customers/:id - Update Customer
+router.put(
+  '/customers/:id',
+  requirePermission(MODULE_KEY, 'update'),
+  creditController.updateCustomer
+);
+
+// PUT /api/credit/bills/:billId - Update Bill
+router.put(
+  '/bills/:billId',
+  requirePermission(MODULE_KEY, 'update'),
+  creditController.updateBill
+);
+
+// DELETE /api/credit/bills/:billId - Delete Bill
+router.delete(
+  '/bills/:billId',
+  requirePermission(MODULE_KEY, 'delete'),
+  creditController.deleteBill
+);
+
 module.exports = router;
