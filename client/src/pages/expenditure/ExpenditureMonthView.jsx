@@ -191,15 +191,6 @@ export default function ExpenditureMonthView() {
     // We need: DB Section -> DB Category -> List of Expenditures
     const processedData = useMemo(() => {
         let monthTotal = 0;
-
-        // Helper to check creation date
-        const isCreatedInCurrentMonth = (dateStr) => {
-            if (!dateStr) return false;
-            const d = new Date(dateStr);
-            if (isNaN(d.getTime())) return false;
-            return d.getMonth() === currentMonth.getMonth() && 
-                   d.getFullYear() === currentMonth.getFullYear();
-        };
         
         const tree = dbSections.map(dbSec => {
             const myDbCats = dbCategoriesMap[dbSec.id] || [];
@@ -220,10 +211,8 @@ export default function ExpenditureMonthView() {
                 };
             });
 
-            // 2. Filter children (Show if has Items OR Created this month)
-            const subTree = rawSubTree.filter(cat => 
-                cat.total > 0 || isCreatedInCurrentMonth(cat.created_at)
-            );
+            // 2. Filter children - ONLY show sections that have actual expenses this month
+            const subTree = rawSubTree.filter(cat => cat.items.length > 0);
 
             // 3. Calculate Section Total
             const dbSectionTotal = subTree.reduce((sum, cat) => sum + cat.total, 0);
@@ -234,8 +223,8 @@ export default function ExpenditureMonthView() {
                 total: dbSectionTotal
             };
         })
-        // 4. Filter Sections (Show if has Children OR Created this month)
-        .filter(sec => sec.subSections.length > 0 || isCreatedInCurrentMonth(sec.created_at));
+        // 4. Filter Sections - ONLY show categories that have sections with expenses
+        .filter(sec => sec.subSections.length > 0);
         
         monthTotal = tree.reduce((sum, sec) => sum + sec.total, 0);
         
